@@ -8,8 +8,6 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-# os.environ['REQUESTS_CA_BUNDLE'] = '/private/etc/ssl/cert.pem'
-
 app = Flask(__name__)
 CORS(app)
 
@@ -25,7 +23,6 @@ product_details = {}
 
 # Function to get product details
 def get_product_details():
-    print("get product details is running")
     # Send a GET request to the URL
     response = requests.get(product_url)
         
@@ -46,7 +43,6 @@ def get_product_details():
 
 # Function to send daily email
 def send_daily_email(email):
-    print("send daily email is running")
     sender_email = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('EMAIL_PASSWORD')
 
@@ -72,14 +68,11 @@ def send_daily_email(email):
         print(f"Email sent successfully to {email}")
     except Exception as e:
         print(f'Error sending email: {str(e)}')
-    print("send daily works")
 
 # Function to schedule the email sending task
 def schedule_email_sending(email):
-    print("schedule email sending is running")
     # Schedule the email sending task every day
     scheduler.add_job(send_daily_email, 'cron', hour=17, minute=00, args=[email])
-    print("chedule_email_sending works")
 
 # Homepage route
 @app.route('/')
@@ -90,11 +83,9 @@ def home():
 # Route to handle sending email manually (for testing)
 @app.route('/send-email', methods=['POST']) 
 def send_email():
-    print("send email is running")
     email = request.json.get('email')
     send_daily_email(email)    # only for testing, remove this line later
     schedule_email_sending(email)
-    print("send email works")
     return jsonify({'message': 'Email sent manually'}), 200
 
 # Start the scheduling when the Flask app is launched
