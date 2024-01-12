@@ -8,6 +8,8 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
+print("XxXXXXXXXXXXXXXXXXX")
+
 os.environ['REQUESTS_CA_BUNDLE'] = '/private/etc/ssl/cert.pem'
 
 app = Flask(__name__)
