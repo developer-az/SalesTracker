@@ -79,7 +79,6 @@ def send_daily_email(email):
         print(f"Email sent successfully to {email}")
     except Exception as e:
         print(f'Error sending email: {str(e)}')
-        raise
     print("send daily works")
 
 # Function to schedule the email sending task
@@ -92,12 +91,11 @@ def schedule_email_sending(email):
 # Homepage route
 @app.route('/')
 def home():
-    print("home is running")
+    print("home is working")
     return render_template('index.html')
-    print("home works")
 
 # Route to handle sending email manually (for testing)
-@app.route('/send-email', methods=['POST'])
+@app.route('/send-email', methods=['POST']) 
 def send_email():
     print("send email is running")
     email = request.json.get('email')
