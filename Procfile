@@ -1,1 +1,1 @@
-web: python SaleTracker/Node.py
+web: gunicorn SaleTracker.Node:app
