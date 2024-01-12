@@ -61,7 +61,7 @@ def send_daily_email(email):
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
-        # server.login(sender_email, password)
+        server.login(sender_email, password)
         # server.sendmail(sender_email, email, message.as_string())
         server.quit()
         print(f"Email sent successfully to {email}")
