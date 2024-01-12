@@ -8,7 +8,7 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-os.environ['REQUESTS_CA_BUNDLE'] = '/private/etc/ssl/cert.pem'
+# os.environ['REQUESTS_CA_BUNDLE'] = '/private/etc/ssl/cert.pem'
 
 app = Flask(__name__)
 CORS(app)
