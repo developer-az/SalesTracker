@@ -58,6 +58,7 @@ def send_daily_email(email):
 
     message.attach(MIMEText(body, 'plain'))
 
+    print("test")
     print(sender_email)
     print(password)
 
