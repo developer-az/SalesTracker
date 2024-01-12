@@ -42,7 +42,7 @@ def get_product_details():
 
 # Function to send daily email
 def send_daily_email(email):
-    sender_email = os.environ.get('SENDER_EMAIL')
+    sender_email = os.getenv('SENDER_EMAIL')
     password = os.environ.get('EMAIL_PASSWORD')
 
     if not product_details:
@@ -58,7 +58,6 @@ def send_daily_email(email):
 
     message.attach(MIMEText(body, 'plain'))
 
-    print("test")
     print(sender_email)
     print(password)
 
