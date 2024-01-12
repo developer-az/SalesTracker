@@ -9,16 +9,16 @@ import requests
 from bs4 import BeautifulSoup
 
 os.environ['REQUESTS_CA_BUNDLE'] = '/private/etc/ssl/cert.pem'
-print("1")
+print("10")
 
 app = Flask(__name__)
 CORS(app)
-print("2")
+print("20")
 
 # Initialize the scheduler
 scheduler = BackgroundScheduler(daemon=True)
 scheduler.start()
-print("3")
+print("30")
 
 # Example URL of the product
 product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001'  # Replace with the actual product URL
