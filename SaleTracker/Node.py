@@ -8,16 +8,17 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
-print("XxXXXXXXXXXXXXXXXXX")
-
 os.environ['REQUESTS_CA_BUNDLE'] = '/private/etc/ssl/cert.pem'
+print("1")
 
 app = Flask(__name__)
 CORS(app)
+print("2")
 
 # Initialize the scheduler
 scheduler = BackgroundScheduler(daemon=True)
 scheduler.start()
+print("3")
 
 # Example URL of the product
 product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001'  # Replace with the actual product URL
@@ -27,6 +28,7 @@ product_details = {}
 
 # Function to get product details
 def get_product_details():
+    print("get product details is running")
     try:
         # Send a GET request to the URL
         response = requests.get(product_url)
@@ -42,10 +44,11 @@ def get_product_details():
         
         product_name = name_element.get_text().strip() if name_element else 'Product name not found'
         product_price = price_element.get_text().strip() if price_element else 'Price not found'
-
+    
         return product_name, product_price
     except Exception as e:
         return f'Error: {str(e)}'
+    
 
 # Function to send daily email
 def send_daily_email(email):
@@ -74,16 +77,19 @@ def send_daily_email(email):
         print(f"Email sent successfully to {email}")
     except Exception as e:
         print(f'Error sending email: {str(e)}')
+    print("send daily works")
 
 # Function to schedule the email sending task
 def schedule_email_sending(email):
     # Schedule the email sending task every day
     scheduler.add_job(send_daily_email, 'cron', hour=17, minute=00, args=[email])
+    print("chedule_email_sending works")
 
 # Homepage route
 @app.route('/')
 def home():
     return render_template('index.html')
+    print("home works")
 
 # Route to handle sending email manually (for testing)
 @app.route('/send-email', methods=['POST'])
@@ -91,6 +97,7 @@ def send_email():
     email = request.json.get('email')
     send_daily_email(email)    # only for testing, remove this line later
     schedule_email_sending(email)
+    print("send email works")
     return jsonify({'message': 'Email sent manually'}), 200
 
 # Start the scheduling when the Flask app is launched
