@@ -78,6 +78,7 @@ def send_daily_email(email):
         print(f"Email sent successfully to {email}")
     except Exception as e:
         print(f'Error sending email: {str(e)}')
+        raise
     print("send daily works")
 
 # Function to schedule the email sending task
