@@ -12,7 +12,6 @@ os.environ['REQUESTS_CA_BUNDLE'] = '/private/etc/ssl/cert.pem'
 
 app = Flask(__name__)
 CORS(app)
-print(flask.__version__)
 # Initialize the scheduler
 scheduler = BackgroundScheduler(daemon=True)
 scheduler.start()
