@@ -26,25 +26,22 @@ product_details = {}
 # Function to get product details
 def get_product_details():
     print("get product details is running")
-    try:
-        # Send a GET request to the URL
-        response = requests.get(product_url)
+    # Send a GET request to the URL
+    response = requests.get(product_url)
         
-        # Parse the HTML content using BeautifulSoup
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        # Identify the HTML elements containing the name and price information
-        # These will vary depending on the structure of the website
-        # name_element = soup.find('h1', class_='product-title')  # Update with the correct tag and class
-        name_element = soup.find('h1', class_='product-title_title__i8NUw').find('div')  # Update with the correct tag and class
-        price_element = soup.find('span', class_='price')  # Update with the correct tag and class
-        
-        product_name = name_element.get_text().strip() if name_element else 'Product name not found'
-        product_price = price_element.get_text().strip() if price_element else 'Price not found'
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(response.content, 'html.parser')
     
-        return product_name, product_price
-    except Exception as e:
-        return f'Error: {str(e)}'
+    # Identify the HTML elements containing the name and price information
+    # These will vary depending on the structure of the website
+    # name_element = soup.find('h1', class_='product-title')  # Update with the correct tag and class
+    name_element = soup.find('h1', class_='product-title_title__i8NUw').find('div')  # Update with the correct tag and class
+    price_element = soup.find('span', class_='price')  # Update with the correct tag and class
+        
+    product_name = name_element.get_text().strip() if name_element else 'Product name not found'
+    product_price = price_element.get_text().strip() if price_element else 'Price not found'
+    
+    return product_name, product_price
     
 
 # Function to send daily email
