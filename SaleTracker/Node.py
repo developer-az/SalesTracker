@@ -40,7 +40,7 @@ def get_product_details():
         
     product_name = name_element.get_text().strip() if name_element else 'Product name not found'
     product_price = price_element.get_text().strip() if price_element else 'Price not found'
-    
+    print("get product details works")
     return product_name, product_price
     
 
