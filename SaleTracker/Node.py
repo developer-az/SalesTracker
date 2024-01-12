@@ -58,8 +58,8 @@ def send_daily_email(email):
 
     message.attach(MIMEText(body, 'plain'))
 
-    print(sender_email)
-    print(password)
+    print(sender_email + "eafwef ")
+    print(password + "wefeawf")
 
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
