@@ -42,7 +42,7 @@ def get_product_details():
 
 # Function to send daily email
 def send_daily_email(email):
-    sender_email = os.getenv('SENDER_EMAIL')
+    sender_email = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('EMAIL_PASSWORD')
 
     if not product_details:
@@ -65,7 +65,7 @@ def send_daily_email(email):
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(sender_email, password)
-        # server.sendmail(sender_email, email, message.as_string())
+        server.sendmail(sender_email, email, message.as_string())
         server.quit()
         print(f"Email sent successfully to {email}")
     except Exception as e:
