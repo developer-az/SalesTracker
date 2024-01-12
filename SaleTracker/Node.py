@@ -7,7 +7,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import os
 import requests
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 
 app = Flask(__name__)
 CORS(app)
@@ -44,7 +43,6 @@ def get_product_details():
 # Function to send daily email
 def send_daily_email(email):
 
-    load_dotenv()
     sender_email = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('EMAIL_PASSWORD')
 
