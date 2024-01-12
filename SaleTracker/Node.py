@@ -9,22 +9,23 @@ import requests
 from bs4 import BeautifulSoup
 
 os.environ['REQUESTS_CA_BUNDLE'] = '/private/etc/ssl/cert.pem'
-print("10")
+print("1")
 
 app = Flask(__name__)
 CORS(app)
-print("20")
+print("2")
 
 # Initialize the scheduler
 scheduler = BackgroundScheduler(daemon=True)
 scheduler.start()
-print("30")
+print("3")
 
 # Example URL of the product
 product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001'  # Replace with the actual product URL
 
 # Define a dictionary to store product details
 product_details = {}
+print("4")
 
 # Function to get product details
 def get_product_details():
