@@ -52,6 +52,7 @@ def get_product_details():
 
 # Function to send daily email
 def send_daily_email(email):
+    print("send daily email is running")
     sender_email = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('EMAIL_PASSWORD')
 
@@ -81,6 +82,7 @@ def send_daily_email(email):
 
 # Function to schedule the email sending task
 def schedule_email_sending(email):
+    print("schedule email sending is running")
     # Schedule the email sending task every day
     scheduler.add_job(send_daily_email, 'cron', hour=17, minute=00, args=[email])
     print("chedule_email_sending works")
@@ -88,12 +90,14 @@ def schedule_email_sending(email):
 # Homepage route
 @app.route('/')
 def home():
+    print("home is running")
     return render_template('index.html')
     print("home works")
 
 # Route to handle sending email manually (for testing)
 @app.route('/send-email', methods=['POST'])
 def send_email():
+    print("send email is running")
     email = request.json.get('email')
     send_daily_email(email)    # only for testing, remove this line later
     schedule_email_sending(email)
