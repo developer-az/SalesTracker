@@ -54,19 +54,15 @@ def send_daily_email(email):
     message['To'] = email
     message['Subject'] = 'Your Daily Email Subject'
 
-    product_name = product_details.get("name", "Product name not found")
-    product_price = product_details.get("price", "Price not found")
-    
     body = f'The price of {product_details["name"]} is: {product_details["price"]}'
 
-    if body is not None:
-        message.attach(MIMEText(body, 'plain'))
+    message.attach(MIMEText(body, 'plain'))
 
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
-        server.login(sender_email, password)
-        server.sendmail(sender_email, email, message.as_string())
+        # server.login(sender_email, password)
+        # server.sendmail(sender_email, email, message.as_string())
         server.quit()
         print(f"Email sent successfully to {email}")
     except Exception as e:
