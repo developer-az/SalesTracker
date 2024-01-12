@@ -37,7 +37,6 @@ def get_product_details():
         
     product_name = name_element.get_text().strip() if name_element else 'Product name not found'
     product_price = price_element.get_text().strip() if price_element else 'Price not found'
-    print("get product details works")
     return product_name, product_price
     
 
@@ -55,9 +54,13 @@ def send_daily_email(email):
     message['To'] = email
     message['Subject'] = 'Your Daily Email Subject'
 
+    product_name = product_details.get("name", "Product name not found")
+    product_price = product_details.get("price", "Price not found")
+    
     body = f'The price of {product_details["name"]} is: {product_details["price"]}'
-    # body = "ewfae"
-    message.attach(MIMEText(body, 'plain'))
+
+    if body is not None:
+        message.attach(MIMEText(body, 'plain'))
 
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -77,7 +80,6 @@ def schedule_email_sending(email):
 # Homepage route
 @app.route('/')
 def home():
-    print("home is working")
     return render_template('index.html')
 
 # Route to handle sending email manually (for testing)
