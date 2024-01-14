@@ -41,7 +41,7 @@ def get_product_details():
     
 
 # Function to send daily email
-def send_daily_email(email):
+def send_the_daily_email(email):
 
     sender_email = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('EMAIL_PASSWORD')
@@ -73,7 +73,7 @@ def send_daily_email(email):
 def schedule_email_sending(email):
     print("schedule email sending is working")
     # Schedule the email sending task every day
-    scheduler.add_job(send_daily_email, 'cron', hour=17, minute=47, args=[email])
+    scheduler.add_job(send_the_daily_email, 'cron', hour=17, minute=47, args=[email])
 
 # Homepage route
 @app.route('/')
@@ -84,7 +84,7 @@ def home():
 @app.route('/send-email', methods=['POST']) 
 def send_email():
     email = request.json.get('email')
-    send_daily_email(email)    # only for testing, remove this line later
+    send_the_daily_email(email)    # only for testing, remove this line later
     schedule_email_sending(email)
     return jsonify({'message': 'Email sent manually'}), 200
 
