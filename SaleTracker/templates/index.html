@@ -17,8 +17,8 @@
 
       const email = document.getElementById('email').value; // Get the email input value
 
-      fetch('https://saletracker-56fca67f4822.herokuapp.com/send-email', { // Replace with your backend domain
-      // fetch(' http://127.0.0.1:5000/send-email', { 
+      //fetch('https://saletracker-56fca67f4822.herokuapp.com/send-email', { // Replace with your backend domain
+      fetch(' http://127.0.0.1:5000/send-email', { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
