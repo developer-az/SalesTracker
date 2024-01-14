@@ -59,9 +59,6 @@ def send_daily_email(email):
 
     message.attach(MIMEText(body, 'plain'))
 
-    print(sender_email)
-    print(password)
-
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -75,7 +72,7 @@ def send_daily_email(email):
 # Function to schedule the email sending task
 def schedule_email_sending(email):
     # Schedule the email sending task every day
-    scheduler.add_job(send_daily_email, 'cron', hour=17, minute=00, args=[email])
+    scheduler.add_job(send_daily_email, 'cron', hour=17, minute=35, args=[email])
 
 # Homepage route
 @app.route('/')
