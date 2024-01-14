@@ -7,9 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import os
 import requests
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 
-load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
