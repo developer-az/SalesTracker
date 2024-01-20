@@ -70,7 +70,6 @@ def send_the_daily_email(email):
 
 # Function to schedule the email sending task
 def schedule_email_sending(email):
-    print("schedule email sending is working")
     # Schedule the email sending task every day
     scheduler.add_job(send_the_daily_email, 'cron', hour=16, minute=50, args=[email])
 
