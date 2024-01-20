@@ -72,7 +72,7 @@ def send_the_daily_email(email):
 def schedule_email_sending(email):
     print("schedule email sending is working")
     # Schedule the email sending task every day
-    scheduler.add_job(send_the_daily_email, 'cron', hour=16, minute=43, args=[email])
+    scheduler.add_job(send_the_daily_email, 'cron', hour=16, minute=50, args=[email])
     scheduler.start()
 
 # Homepage route
