@@ -3,7 +3,7 @@ from flask_cors import CORS
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.blocking import BlockingScheduler
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -12,8 +12,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Initialize the scheduler
-scheduler = BackgroundScheduler(daemon=True)
-scheduler.start()
+scheduler = BlockingScheduler()
 
 # Example URL of the product
 product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001'  # Replace with the actual product URL
@@ -74,6 +73,7 @@ def schedule_email_sending(email):
     print("schedule email sending is working")
     # Schedule the email sending task every day
     scheduler.add_job(send_the_daily_email, 'cron', hour=16, minute=43, args=[email])
+    scheduler.start()
 
 # Homepage route
 @app.route('/')
