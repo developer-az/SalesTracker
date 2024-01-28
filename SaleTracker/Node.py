@@ -68,10 +68,10 @@ def send_the_daily_email(email):
     except Exception as e:
         print(f'Error sending email: {str(e)}')
 
-# Function to schedule the email sending task
-def schedule_email_sending(email):
-    # Schedule the email sending task every day
-    scheduler.add_job(send_the_daily_email, 'cron', hour=16, minute=50, args=[email])
+# # Function to schedule the email sending task
+# def schedule_email_sending(email):
+#     # Schedule the email sending task every day
+#     scheduler.add_job(send_the_daily_email, 'cron', hour=16, minute=50, args=[email])
 
 @scheduler.scheduled_job('interval', minutes=3)
 def timed_job():
@@ -87,7 +87,7 @@ def home():
 def send_email():
     email = request.json.get('email')
     send_the_daily_email(email)    # only for testing, remove this line later
-    schedule_email_sending(email)
+    # schedule_email_sending(email)
     return jsonify({'message': 'Email sent manually'}), 200
 
 # Start the scheduling when the Flask app is launched
