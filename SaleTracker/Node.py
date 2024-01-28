@@ -7,7 +7,9 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 import os
 import requests
 from bs4 import BeautifulSoup
+# from dotenv import load_dotenv
 
+# load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
@@ -72,10 +74,6 @@ def send_the_daily_email(email):
 # def schedule_email_sending(email):
 #     # Schedule the email sending task every day
 #     scheduler.add_job(send_the_daily_email, 'cron', hour=16, minute=50, args=[email])
-
-@scheduler.scheduled_job('interval', minutes=3)
-def timed_job():
-    print('This job is run every three minutes.')
 
 # Homepage route
 @app.route('/')
