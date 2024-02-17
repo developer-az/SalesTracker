@@ -4,11 +4,11 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from get_product_details import get_product_details
-from dotenv import load_dotenv #remove for deployment onto heroku
+#from dotenv import load_dotenv #remove for deployment onto heroku
 import os
 import smtplib
 
-load_dotenv() #remove for deployment onto heroku
+#load_dotenv() #remove for deployment onto heroku
 app = Flask(__name__)
 CORS(app)
 
