@@ -45,7 +45,7 @@ def send_product_details_email(email):
         print(f'Error sending email: {str(e)}')
 
 def schedule_email_sending(email): 
-    scheduler.add_job(send_product_details_email, 'cron', hour=14, minute=12, args=[email])
+    scheduler.add_job(send_product_details_email, 'cron', hour=14, minute=20, args=[email])
     scheduler.start()
 
 @app.route('/')
