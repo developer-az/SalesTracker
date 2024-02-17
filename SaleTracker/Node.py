@@ -7,9 +7,9 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 import os
 import requests
 from bs4 import BeautifulSoup
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
@@ -17,7 +17,7 @@ CORS(app)
 scheduler = BlockingScheduler()
 
 # Example URL of the product
-product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001'  # Replace with the actual product URL
+product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001' 
 
 # Define a dictionary to store product details
 product_details = {}
@@ -74,7 +74,7 @@ def send_product_details_email(email):
 def schedule_email_sending(email):
     # Schedule the email sending task every day
     scheduler.add_job(send_product_details_email, 'cron', hour=16, minute=50, args=[email])
-    shceduler.start()
+    scheduler.start()
 
 # Homepage route
 @app.route('/')
@@ -86,7 +86,7 @@ def home():
 def send_email():
     email = request.json.get('email')
     send_product_details_email(email)    # only for testing, remove this line later
-    # schedule_email_sending(email)
+    schedule_email_sending(email)
     return jsonify({'message': 'Email sent manually'}), 200
 
 # Start the scheduling when the Flask app is launched
