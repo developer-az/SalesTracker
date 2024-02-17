@@ -16,7 +16,7 @@ scheduler = BlockingScheduler()
 
 product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001'
 
-def send_the_daily_email(email):
+def send_product_details_email(email):
 
     sender_email = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('EMAIL_PASSWORD')
@@ -44,8 +44,9 @@ def send_the_daily_email(email):
     except Exception as e:
         print(f'Error sending email: {str(e)}')
 
-def schedule_email_sending(email):
-    scheduler.add_job(send_the_daily_email, 'cron', hour=16, minute=50, args=[email])
+def schedule_email_sending(email): 
+    scheduler.add_job(send_product_details_email, 'cron', hour=14, minute=12, args=[email])
+    scheduler.start()
 
 @app.route('/')
 def home():
@@ -54,7 +55,8 @@ def home():
 @app.route('/send-email', methods=['POST']) 
 def send_email():
     email = request.json.get('email')
-    send_the_daily_email(email)
+    send_product_details_email(email) #for testing
+    schedule_email_sending(email)
     return jsonify({'message': 'Email sent manually'}), 200
 
 if __name__ == '__main__':
