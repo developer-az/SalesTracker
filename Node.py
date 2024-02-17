@@ -1,41 +1,55 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from apscheduler.schedulers.blocking import BlockingScheduler
+import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from get_product_details import get_product_details
-from bs4 import BeautifulSoup
-#from dotenv import load_dotenv #remove for deployment onto heroku
+from apscheduler.schedulers.blocking import BlockingScheduler
 import os
-import smtplib
 import requests
+from bs4 import BeautifulSoup
+# from dotenv import load_dotenv
 
-#load_dotenv() #remove for deployment onto heroku
+# load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
+# Initialize the scheduler
 scheduler = BlockingScheduler()
 
-product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001'
+# Example URL of the product
+product_url = 'https://shop.lululemon.com/p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001'  # Replace with the actual product URL
 
-def get_product_details(product_url):
+# Define a dictionary to store product details
+product_details = {}
+
+# Function to get product details
+def get_product_details():
+    # Send a GET request to the URL
     response = requests.get(product_url)
+        
+    # Parse the HTML content using BeautifulSoup
     soup = BeautifulSoup(response.content, 'html.parser')
-    name_element = soup.find('h1', class_='product-title_title__i8NUw').find('div')
-    price_element = soup.find('span', class_='price')
+    
+    # Identify the HTML elements containing the name and price information
+    # These will vary depending on the structure of the website
+    # name_element = soup.find('h1', class_='product-title')  # Update with the correct tag and class
+    name_element = soup.find('h1', class_='product-title_title__i8NUw').find('div')  # Update with the correct tag and class
+    price_element = soup.find('span', class_='price')  # Update with the correct tag and class
         
     product_name = name_element.get_text().strip() if name_element else 'Product name not found'
     product_price = price_element.get_text().strip() if price_element else 'Price not found'
     return product_name, product_price
+    
 
+# Function to send daily email
 def send_product_details_email(email):
 
     sender_email = os.environ.get('SENDER_EMAIL')
     password = os.environ.get('EMAIL_PASSWORD')
-    product_details = {}
 
     if not product_details:
-        product_details['name'], product_details['price'] = get_product_details(product_url)
+        # Fetch product details only if not already fetched
+        product_details['name'], product_details['price'] = get_product_details()
 
     message = MIMEMultipart()
     message['From'] = sender_email
@@ -56,20 +70,25 @@ def send_product_details_email(email):
     except Exception as e:
         print(f'Error sending email: {str(e)}')
 
-def schedule_email_sending(email): 
-    scheduler.add_job(send_product_details_email, 'cron', hour=14, minute=20, args=[email])
-    scheduler.start()
+# Function to schedule the email sending task
+def schedule_email_sending(email):
+    # Schedule the email sending task every day
+    scheduler.add_job(send_product_details_email, 'cron', hour=16, minute=50, args=[email])
+    shceduler.start()
 
+# Homepage route
 @app.route('/')
 def home():
-    return render_template('website.html')
+    return render_template('index.html')
 
+# Route to handle sending email manually (for testing)
 @app.route('/send-email', methods=['POST']) 
 def send_email():
     email = request.json.get('email')
-    send_product_details_email(email) #for testing
-    schedule_email_sending(email)
+    send_product_details_email(email)    # only for testing, remove this line later
+    # schedule_email_sending(email)
     return jsonify({'message': 'Email sent manually'}), 200
 
+# Start the scheduling when the Flask app is launched
 if __name__ == '__main__':
     app.run(debug=True)
