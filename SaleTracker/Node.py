@@ -7,9 +7,9 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 import os
 import requests
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
+# from dotenv import load_dotenv #remove when deploying
 
-load_dotenv()
+# load_dotenv() #remove when deploying
 app = Flask(__name__)
 CORS(app)
 
@@ -73,7 +73,7 @@ def send_product_details_email(email):
 # Function to schedule the email sending task
 def schedule_email_sending(email):
     # Schedule the email sending task every day
-    scheduler.add_job(send_product_details_email, 'cron', hour=16, minute=50, args=[email])
+    scheduler.add_job(send_product_details_email, 'cron', hour=15, minute=23, args=[email])
     scheduler.start()
 
 # Homepage route
