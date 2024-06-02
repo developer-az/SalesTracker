@@ -4,11 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Website</title>
+    <title>Sale Tracker</title>
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         header {
@@ -33,7 +36,6 @@
         main {
             padding: 20px;
             text-align: center;
-            height: calc(80vh);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -42,115 +44,16 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-        }
-
-        .learn-more-btn {
-            display: inline-block;
-            background-color: #007bff;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 50px;
-        }
-
-        .welcome-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: -10px 0 0;
-        }
-
-        .welcome-content h1 {
-            margin: 0 10px 10px;
-        }
-
-        .welcome-content h1:first-child {
-            margin-right: auto;
-            font-size: 80px;
-        }
-
-        .welcome-content h1:last-child {
-            margin-left: auto;
-        }
-
-        .intro-section {
-            margin-top: 50px;
-            background-color: #f9f9f9;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-        }
-
-        .text-section {
             flex: 1;
-            margin-bottom: 20px;
-            text-align: center;
         }
 
-        .text-section h2 {
-            text-align: left;
-            padding-left: 30px;
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        .text-section p {
-            text-align: left;
-            padding-left: 30px;
-            font-size: 20px;
-            max-width: 50%;
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-
-        .image-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .image-container {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .image-container img {
-            max-width: 100%;
-        }
-
-        #myBtn {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 30px;
-            z-index: 99;
-            border: none;
-            outline: none;
-            background-color: red;
-            color: white;
-            cursor: pointer;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 18px;
-        }
-
-        #myBtn:hover {
-            background-color: #555;
-        }
-
-        /* Form styling */
         .form-section {
-            margin-top: 50px;
+            margin: 20px auto;
             background-color: #ffffff;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: left;
+            text-align: center;
             width: 100%;
             max-width: 600px;
         }
@@ -184,55 +87,98 @@
         .form-section button:hover {
             background-color: #0056b3;
         }
+
+        .welcome-content {
+            margin-bottom: 30px;
+        }
+
+        .welcome-content h1 {
+            margin: 0;
+        }
+
+        #myBtn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            z-index: 99;
+            border: none;
+            outline: none;
+            background-color: red;
+            color: white;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        #myBtn:hover {
+            background-color: #555;
+        }
+
+        footer {
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        footer a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 
 <body>
     <header>
         <div>
-            <img src="path/to/your-logo.png" alt="Your Company Logo">
+            <img src="Designer.jpeg" alt="Your Company Logo">
         </div>
         <nav>
-            <a href="#">Link 1</a>
+            <!-- <a href="#">Link 1</a>
             <a href="#">Link 2</a>
             <a href="#">Link 3</a>
-            <a href="#">Link 4</a>
+            <a href="#">Link 4</a> -->
         </nav>
     </header>
+
     <main>
-        <div class="welcome-content">
-            <h1>123</h1>
-            <h1>Welcome to a new concept of navigation</h1>
-            <button class="learn-more-btn" onclick="scrollToContent()">Learn More</button>
+        <div class="form-section">
+            <div class="welcome-content">
+                <h1>Sale Tracker</h1>
+                <p>Sends an email when your item is on sale</p>
+            </div>
+            <form id="combinedForm">
+                <label for="email">Enter Email:</label>
+                <input type="email" id="email" name="email" required>
+                
+                <label for="productLink">Enter Product Link:</label>
+                <input type="url" id="productLink" name="productLink" required>
+                
+                <button type="submit">Submit</button>
+            </form>
         </div>
     </main>
-    <div id="content" class="intro-section">
-        <div class="text-section">
-            <h2>Our Goals:</h2>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed auctor tortor non felis elementum, et tempus felis cursus. Proin malesuada dolor euismod est cursus, id tincidunt justo dictum. Nam hendrerit, ex non convallis ullamcorper, justo turpis eleifend nunc, vel tristique nisl neque nec nisl. Nulla facilisi.</p>
-            <div class="image-container">
-                <img src="path/to/image1.jpg" alt="Image 1">
-                <p>Image 1 description</p>
-            </div>
-            <div class="image-container">
-                <img src="path/to/image2.jpg" alt="Image 2">
-                <p>Image 2 description</p>
-            </div>
-        </div>
-    </div>
     
-    <div class="form-section">
-        <form id="combinedForm">
-            <label for="email">Enter Email:</label>
-            <input type="email" id="email" name="email" required>
-            
-            <label for="productLink">Enter Product Link:</label>
-            <input type="url" id="productLink" name="productLink" required>
-            
-            <button type="submit">Submit</button>
-        </form>
-    </div>
-    
+    <footer>
+        <p>&copy; 2024 Siqi Ding. All rights reserved.</p>
+        <p>
+            <!-- <a href="#">Privacy Policy</a> |
+            <a href="#">Terms of Service</a> |
+            <a href="#">Contact Us</a> -->
+        </p>
+    </footer>
+
     <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
 
     <script>

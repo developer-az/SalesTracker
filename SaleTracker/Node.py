@@ -36,7 +36,20 @@ def get_product_details():
         product_price = 'Price not found'
 
     return product_name, product_price
-    
+
+# Function to check if the product is on sale
+def check_sales():
+    response = requests.get(product_url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    sale_label = soup.find('div', class_='sale-label')  # Example: Class name might vary
+    original_price_element = soup.find('span', class_='original-price')  # Example: Class name might vary
+    discounted_price_element = soup.find('span', class_='discounted-price')  # Example: Class name might vary
+
+    if sale_label or (original_price_element and discounted_price_element):
+        return True
+    else:
+        return False
 
 # Function to send daily email
 def send_email(email):
