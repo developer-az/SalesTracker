@@ -1,61 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Email and Product Link Form</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Website</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header img {
+            max-height: 50px;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        main {
+            padding: 20px;
+            text-align: center;
+            height: calc(80vh);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-image: url('path/to/background-image.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .learn-more-btn {
+            display: inline-block;
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 50px;
+        }
+
+        .welcome-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: -10px 0 0;
+        }
+
+        .welcome-content h1 {
+            margin: 0 10px 10px;
+        }
+
+        .welcome-content h1:first-child {
+            margin-right: auto;
+            font-size: 80px;
+        }
+
+        .welcome-content h1:last-child {
+            margin-left: auto;
+        }
+
+        .intro-section {
+            margin-top: 50px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .text-section {
+            flex: 1;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .text-section h2 {
+            text-align: left;
+            padding-left: 30px;
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .text-section p {
+            text-align: left;
+            padding-left: 30px;
+            font-size: 20px;
+            max-width: 50%;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .image-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .image-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+        }
+
+        #myBtn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            z-index: 99;
+            border: none;
+            outline: none;
+            background-color: red;
+            color: white;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        #myBtn:hover {
+            background-color: #555;
+        }
+
+        /* Form styling */
+        .form-section {
+            margin-top: 50px;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .form-section label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .form-section input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .form-section button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .form-section button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
+
 <body>
-  <form id="combinedForm">
-    <label for="email">Enter Email:</label>
-    <input type="email" id="email" name="email" required>
+    <header>
+        <div>
+            <img src="path/to/your-logo.png" alt="Your Company Logo">
+        </div>
+        <nav>
+            <a href="#">Link 1</a>
+            <a href="#">Link 2</a>
+            <a href="#">Link 3</a>
+            <a href="#">Link 4</a>
+        </nav>
+    </header>
+    <main>
+        <div class="welcome-content">
+            <h1>123</h1>
+            <h1>Welcome to a new concept of navigation</h1>
+            <button class="learn-more-btn" onclick="scrollToContent()">Learn More</button>
+        </div>
+    </main>
+    <div id="content" class="intro-section">
+        <div class="text-section">
+            <h2>Our Goals:</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed auctor tortor non felis elementum, et tempus felis cursus. Proin malesuada dolor euismod est cursus, id tincidunt justo dictum. Nam hendrerit, ex non convallis ullamcorper, justo turpis eleifend nunc, vel tristique nisl neque nec nisl. Nulla facilisi.</p>
+            <div class="image-container">
+                <img src="path/to/image1.jpg" alt="Image 1">
+                <p>Image 1 description</p>
+            </div>
+            <div class="image-container">
+                <img src="path/to/image2.jpg" alt="Image 2">
+                <p>Image 2 description</p>
+            </div>
+        </div>
+    </div>
     
-    <label for="productLink" style="margin-top: 20px;">Enter Product Link:</label>
-    <input type="url" id="productLink" name="productLink" required>
+    <div class="form-section">
+        <form id="combinedForm">
+            <label for="email">Enter Email:</label>
+            <input type="email" id="email" name="email" required>
+            
+            <label for="productLink">Enter Product Link:</label>
+            <input type="url" id="productLink" name="productLink" required>
+            
+            <button type="submit">Submit</button>
+        </form>
+    </div>
     
-    <button type="submit" style="margin-top: 20px;">Submit</button>
-  </form>
+    <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
 
-  <script>
-    document.getElementById('combinedForm').addEventListener('submit', function(event) {
-      event.preventDefault(); 
-
-      const email = document.getElementById('email').value;
-      const productLink = document.getElementById('productLink').value;
-
-      // First, update the product link
-      fetch('http://127.0.0.1:5000/update-product-link', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ productLink: productLink })
-      })
-      .then(response => {
-        if (response.ok) {
-          console.log('Product link updated successfully!');
-          return fetch('http://127.0.0.1:5000/schedule-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email: email })
-          });
-        } else {
-          throw new Error('Error updating product link');
+    <script>
+        function scrollToContent() {
+            const contentElement = document.querySelector('#content');
+            contentElement.scrollIntoView({ behavior: 'smooth' });
         }
-      })
-      .then(response => {
-        if (response.ok) {
-          alert('Email sent successfully!');
-        } else {
-          alert('Error sending email!');
+
+        let mybutton = document.getElementById("myBtn");
+
+        window.onscroll = function() {scrollFunction()};
+
+        function scrollFunction() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                mybutton.style.display = "block";
+            } else {
+                mybutton.style.display = "none";
+            }
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert(`Error: ${error.message}`);
-      });
-    });
-  </script>
+
+        function topFunction() {
+            document.body.scrollTo({ top: 0, behavior: 'smooth' });
+            document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.getElementById('combinedForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            const email = document.getElementById('email').value;
+            const productLink = document.getElementById('productLink').value;
+
+            fetch('http://127.0.0.1:5000/update-product-link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ productLink: productLink })
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Product link updated successfully!');
+                    return fetch('http://127.0.0.1:5000/schedule-email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email: email })
+                    });
+                } else {
+                    throw new Error('Error updating product link');
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Email sent successfully!');
+                } else {
+                    alert('Error sending email!');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(`Error: ${error.message}`);
+            });
+        });
+    </script>
+
 </body>
+
 </html>

@@ -13,7 +13,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-scheduler = BlockingScheduler()
+#scheduler = BlockingScheduler()
 product_url = ""
 product_details = {}
 
@@ -25,7 +25,7 @@ def get_product_details():
     
     name_element = soup.find('h1', class_='product-title_title__i8NUw').find('div') 
     price_element = soup.find('span', class_='price') 
-    
+
     if name_element:
         product_name = name_element.get_text().strip()
     else:
