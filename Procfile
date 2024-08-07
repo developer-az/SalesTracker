@@ -1,1 +1,1 @@
-web: gunicorn SaleTracker.Node:app
+web: gunicorn SaleTracker.app:app
