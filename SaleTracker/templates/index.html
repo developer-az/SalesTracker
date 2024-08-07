@@ -1,250 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sale Tracker</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
 
-        header {
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header img {
-            max-height: 50px;
-        }
-
-        nav a {
-            color: #fff;
-            text-decoration: none;
-            margin-left: 20px;
-        }
-
-        main {
-            padding: 20px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-image: url('path/to/background-image.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            flex: 1;
-        }
-
-        .form-section {
-            margin: 20px auto;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        .form-section label {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .form-section input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .form-section button {
-            background-color: #007bff;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .form-section button:hover {
-            background-color: #0056b3;
-        }
-
-        .welcome-content {
-            margin-bottom: 30px;
-        }
-
-        .welcome-content h1 {
-            margin: 0;
-        }
-
-        #myBtn {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 30px;
-            z-index: 99;
-            border: none;
-            outline: none;
-            background-color: red;
-            color: white;
-            cursor: pointer;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 18px;
-        }
-
-        #myBtn:hover {
-            background-color: #555;
-        }
-
-        footer {
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-            bottom: 0;
-            width: 100%;
-            flex-shrink: 0;
-        }
-
-        footer a {
-            color: #fff;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-
-<body>
+  <body>
     <header>
-        <div>
-            <img src="Designer.jpeg" alt="Your Company Logo">
+      <div>
+        <img
+          src="{{ url_for('static', filename='Logo.jpeg') }}"
+          alt="Your Company Logo"
+        />
+      </div>
+      <nav>
+        <div class="dropdown">
+          <span>About Us</span>
+          <div class="dropdown-content">
+            <a
+              href="https://www.linkedin.com/in/siqi-ding-21b853236/"
+              target="_blank"
+              >LinkedIn</a
+            >
+          </div>
         </div>
-        <nav>
-            <!-- <a href="#">Link 1</a>
-            <a href="#">Link 2</a>
-            <a href="#">Link 3</a>
-            <a href="#">Link 4</a> -->
-        </nav>
+      </nav>
     </header>
 
     <main>
-        <div class="form-section">
-            <div class="welcome-content">
-                <h1>Sale Tracker</h1>
-                <p>Sends an email when your item is on sale</p>
-            </div>
-            <form id="combinedForm">
-                <label for="email">Enter Email:</label>
-                <input type="email" id="email" name="email" required>
-                
-                <label for="productLink">Enter Product Link:</label>
-                <input type="url" id="productLink" name="productLink" required>
-                
-                <button type="submit">Submit</button>
-            </form>
+      <div class="form-section">
+        <div class="welcome-content">
+          <h1>Sale Tracker</h1>
+          <p>Sends an email when your item is on sale</p>
         </div>
+        <form id="combinedForm">
+          <label for="email">Enter Email:</label>
+          <input type="email" id="email" name="email" required />
+
+          <label for="productLink">Enter Product Link:</label>
+          <input type="url" id="productLink" name="productLink" required />
+
+          <button type="submit">Submit</button>
+        </form>
+      </div>
     </main>
-    
+
     <footer>
-        <p>&copy; 2024 Siqi Ding. All rights reserved.</p>
-        <p>
-            <!-- <a href="#">Privacy Policy</a> |
-            <a href="#">Terms of Service</a> |
-            <a href="#">Contact Us</a> -->
-        </p>
+      <p>&copy; 2024 Siqi Ding. All rights reserved.</p>
     </footer>
 
     <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
 
-    <script>
-        function scrollToContent() {
-            const contentElement = document.querySelector('#content');
-            contentElement.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        let mybutton = document.getElementById("myBtn");
-
-        window.onscroll = function() {scrollFunction()};
-
-        function scrollFunction() {
-            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-                mybutton.style.display = "block";
-            } else {
-                mybutton.style.display = "none";
-            }
-        }
-
-        function topFunction() {
-            document.body.scrollTo({ top: 0, behavior: 'smooth' });
-            document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        document.getElementById('combinedForm').addEventListener('submit', function(event) {
-            event.preventDefault(); 
-
-            const email = document.getElementById('email').value;
-            const productLink = document.getElementById('productLink').value;
-
-            fetch('http://127.0.0.1:5000/update-product-link', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ productLink: productLink })
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('Product link updated successfully!');
-                    return fetch('http://127.0.0.1:5000/schedule-email', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ email: email })
-                    });
-                } else {
-                    throw new Error('Error updating product link');
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert('Email sent successfully!');
-                } else {
-                    alert('Error sending email!');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert(`Error: ${error.message}`);
-            });
-        });
-    </script>
-
-</body>
-
+    <script src="{{ url_for('static', filename='styles.css') }}"></script>
+  </body>
 </html>
