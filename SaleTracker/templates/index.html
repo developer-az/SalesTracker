@@ -10,52 +10,49 @@
     />
   </head>
 
-  <body>
-    <header>
-      <div>
-        <img
-          src="{{ url_for('static', filename='Logo.jpeg') }}"
-          alt="Your Company Logo"
-        />
-      </div>
-      <nav>
-        <div class="dropdown">
+  <body class="webpage">
+    <header class="header">
+      <img
+        src="{{ url_for('static', filename='Logo.jpeg') }}"
+        alt="Your Company Logo"
+      />
+      <div class="dropdown">
+        <div class="about-us">
           <span>About Us</span>
-          <div class="dropdown-content">
-            <a
-              href="https://www.linkedin.com/in/siqi-ding-21b853236/"
-              target="_blank"
-              >LinkedIn</a
-            >
-          </div>
         </div>
-      </nav>
+        <div class="dropdown-content">
+          <a
+            class="linkedIn"
+            href="https://www.linkedin.com/in/siqi-ding-21b853236/"
+            target="_blank"
+            >LinkedIn
+          </a>
+        </div>
+      </div>
     </header>
 
-    <main>
-      <div class="form-section">
-        <div class="welcome-content">
-          <h1>Sale Tracker</h1>
-          <p>Sends an email when your item is on sale</p>
-        </div>
-        <form id="combinedForm">
-          <label for="email">Enter Email:</label>
-          <input type="email" id="email" name="email" required />
-
-          <label for="productLink">Enter Product Link:</label>
-          <input type="url" id="productLink" name="productLink" required />
-
-          <button type="submit">Submit</button>
-        </form>
+    <div class="form">
+      <div class="welcome-content">
+        <h1>Sale Tracker</h1>
+        <p>Sends an email when your item is on sale</p>
       </div>
-    </main>
+      <form id="combinedForm">
+        <label for="email">Enter Email:</label>
+        <input type="email" id="email" name="email" required />
 
-    <footer>
-      <p>&copy; 2024 Siqi Ding. All rights reserved.</p>
-    </footer>
+        <label for="productLink">Enter Product Link:</label>
+        <input type="url" id="productLink" name="productLink" required />
 
-    <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+
+    <button onclick="topFunction()" id="button" title="Go to top">Top</button>
 
     <script src="{{ url_for('static', filename='styles.css') }}"></script>
+
+    <footer class="footer">
+      <p>&copy; 2024 Siqi Ding. All rights reserved.</p>
+    </footer>
   </body>
 </html>
