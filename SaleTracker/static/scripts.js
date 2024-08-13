@@ -27,7 +27,7 @@ document
   .addEventListener("submit", function (event) {
     event.preventDefault();
 
-    const email = document.getElementById("email").value;
+    const recipient_email = document.getElementById("email").value;
     const productLink = document.getElementById("productLink").value;
 
     fetch("http://127.0.0.1:5000/update-product-link", {
@@ -45,7 +45,7 @@ document
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ email: email }),
+            body: JSON.stringify({ recipient_email: recipient_email }),
           });
         } else {
           throw new Error("Error updating product link");
