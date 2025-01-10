@@ -69,7 +69,7 @@ def send_email(recipient_email):
     message['From'] = sender_email
     message['To'] = recipient_email
     message['Subject'] = 'Your Product ' + product_details['name'] + ' is on sale!'
-    body = f"The price of {product_details['name']} is: {product_details['price']}"
+    body = f"The price of {product_details['name']} is: {product_details['price']}, \nCheck it out here: {product_link}"
     message.attach(MIMEText(body, 'plain'))
 
     try:
