@@ -8,6 +8,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='styles.css') }}"
     />
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
   </head>
 
   <body class="webpage">
@@ -36,12 +37,34 @@
         <h1>Sale Tracker</h1>
         <p>Sends an email when your item is on sale</p>
       </div>
-      <form id="combinedForm">
-        <label for="email">Enter Email:</label>
-        <input type="email" id="email" name="email" required />
 
-        <label for="productLink">Enter Product Link:</label>
-        <input type="url" id="productLink" name="productLink" required />
+      <!-- Message containers -->
+      <div id="error-message" class="message error" style="display: none;"></div>
+      <div id="success-message" class="message success" style="display: none;"></div>
+
+      <form id="combinedForm">
+        <div class="form-group">
+          <label for="email">Enter Email:</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            required 
+            placeholder="your@email.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="productLink">Enter Product Link:</label>
+          <input 
+            type="url" 
+            id="productLink" 
+            name="productLink" 
+            required 
+            placeholder="https://example.com/product"
+          />
+          <small class="help-text">Enter the full URL of the product you want to track</small>
+        </div>
 
         <button type="submit">Submit</button>
       </form>
