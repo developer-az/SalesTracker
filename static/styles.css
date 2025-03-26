@@ -13,19 +13,18 @@
   justify-content: space-between;
   align-items: center;
   background-color: #333;
-  padding-top: 0.5%;
-  padding-bottom: 0.5%;
+  padding: 1rem 2rem;
 }
 
-.header img {
-  max-height: 50px;
-  border: 2px solid #fff;
-  margin-left: 0.5%;
+.logo-text {
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 .dropdown {
   color: #fff;
-  margin-right: 1%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -39,20 +38,36 @@
   z-index: 1;
   padding: 15px;
   border-radius: 5px;
-  transform: translateY(35%); /*temporary fix*/
+  transform: translateY(35%);
+  min-width: 200px;
 }
 
-.dropdown:hover .dropdown-content {
+.dropdown-content.show {
   display: block;
 }
 
 .dropdown-content .linkedIn {
   color: #fff;
   text-decoration: none;
+  display: block;
+  padding: 8px 0;
+  transition: color 0.3s ease;
 }
 
 .dropdown-content .linkedIn:hover {
-  text-decoration: underline;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.about-us {
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.about-us:hover {
+  background-color: #444;
 }
 
 .form {

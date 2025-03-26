@@ -114,3 +114,28 @@ document
       hideLoading();
     }
   });
+
+// Dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.querySelector('.dropdown');
+    const dropdownContent = document.querySelector('.dropdown-content');
+    const aboutUs = document.querySelector('.about-us');
+
+    // Toggle dropdown on click
+    aboutUs.addEventListener('click', function(e) {
+        e.stopPropagation();
+        dropdownContent.classList.toggle('show');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target)) {
+            dropdownContent.classList.remove('show');
+        }
+    });
+
+    // Prevent dropdown from closing when clicking inside it
+    dropdownContent.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+});
