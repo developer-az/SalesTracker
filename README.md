@@ -1,137 +1,110 @@
-# Sale Tracker
+# Sale Tracker – Email Notifier
 
-A Flask application that tracks product prices and sends email notifications when products go on sale.
+A simple Python script that scrapes product prices from Lululemon and Nike, then sends combined daily email alerts to one or more recipients.
+
+This project is packaged using `py2app` to create a standalone macOS `.app` file that runs the script daily.
+
+---
 
 ## Features
 
-- Track product prices from any website
-- Email notifications for price changes
-- Scheduled price checks
-- Rate limiting to prevent abuse
-- Health check endpoint
-- Comprehensive error handling and logging
+* Scrapes product names and prices from Lululemon and Nike
+* Sends email alerts to a list of recipients once per day at 9 PM
+* Formats a combined email with prices and product links
+* Easily buildable into a standalone `.app` using `py2app` on macOS
+
+---
 
 ## Prerequisites
 
-- Python 3.8 or higher
-- Gmail account (for sending notifications)
-- Virtual environment (recommended)
+* Python 3.8 or higher
+* macOS (for building `.app` with `py2app`)
+* Gmail account (App Password required for sending emails)
+* Internet connection to access product pages
 
-## Setup
+---
 
-1. Clone the repository:
+## Setup Instructions
+
+### 1. Clone the Repository
+
 ```bash
 git clone <your-repo-url>
 cd SaleTracker
 ```
 
-2. Create and activate a virtual environment:
+### 2. Create and Activate a Virtual Environment
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate  # macOS/Linux
 ```
 
-3. Install dependencies:
+### 3. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Create a `.env` file in the root directory with the following variables:
+If not already included, install `py2app` manually:
+
+```bash
+pip install py2app
 ```
+
+### 4. Create a `.env` File
+
+Create a `.env` file in the project root with the following variables:
+
+```env
 SENDER_EMAIL=your-email@gmail.com
-EMAIL_PASSWORD=your-app-specific-password
-PORT=5000  # Optional, defaults to 5000
+EMAIL_PASSWORD=your-app-password
+RECIPIENT_EMAIL=recipient1@example.com
+RECIPIENT_EMAIL2=recipient2@example.com
 ```
 
-Note: For Gmail, you'll need to use an App Password. To generate one:
-1. Go to your Google Account settings
-2. Navigate to Security
-3. Enable 2-Step Verification if not already enabled
-4. Go to App Passwords
-5. Generate a new app password for "Mail"
+Note: For Gmail, you must enable 2-Step Verification and generate an App Password under Google Account > Security > App Passwords.
 
-## Running Locally
+---
+
+## Running the Script (Dev Mode)
+
+To test the email script directly:
 
 ```bash
-python app.py
+python3 send_email.py
 ```
 
-The application will be available at `http://localhost:5000`
+This will begin checking prices and emailing once per day at 9:00 PM.
 
-## Deployment
+To stop it, press `Ctrl + C`.
 
-### Using Gunicorn (Recommended for Production)
+---
 
-1. Install Gunicorn:
+## Building a macOS App
+
+Use `py2app` to package the script into a `.app` file.
+
+### 1. Build the App
+
 ```bash
-pip install gunicorn
+python3 setup.py py2app
 ```
 
-2. Run the application:
-```bash
-gunicorn --bind 0.0.0.0:$PORT app:app
+### 2. Locate the Built App
+
+After building, the `.app` will be located in the `dist/` directory:
+
+```
+dist/send_email.app
 ```
 
-### Using Docker
+You can move this to `/Applications` or run it directly. It will run in the background and send emails daily.
 
-1. Build the Docker image:
-```bash
-docker build -t sale-tracker .
-```
+---
 
-2. Run the container:
-```bash
-docker run -p 5000:5000 --env-file .env sale-tracker
-```
+## Security
 
-## API Endpoints
-
-- `GET /`: Homepage
-- `GET /health`: Health check endpoint
-- `POST /schedule-email`: Schedule email notifications
-  ```json
-  {
-    "recipient_email": "user@example.com"
-  }
-  ```
-- `POST /update-product-link`: Update the product to track
-  ```json
-  {
-    "productLink": "https://example.com/product"
-  }
-  ```
-
-## Rate Limiting
-
-The API has the following rate limits:
-- 200 requests per day
-- 50 requests per hour
-- 5 requests per minute for specific endpoints
-
-## Error Handling
-
-The application includes comprehensive error handling for:
-- Invalid email addresses
-- Invalid product links
-- Network errors
-- Email sending failures
-- Missing environment variables
-
-## Logging
-
-Logs are written to the console with the following format:
-```
-%(asctime)s - %(name)s - %(levelname)s - %(message)s
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+* Avoid committing your `.env` file to version control.
+* Use App Passwords instead of your main Gmail password.
+* Do not hardcode credentials in the script.
