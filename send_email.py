@@ -129,7 +129,7 @@ def send_combined_email():
 #         send_email(link, company)
 
 schedule.every().day.at("21:00").do(send_combined_email)
-send_combined_email()  # Send immediately for testing
+# send_combined_email()  # Send immediately for testing
 
 while True:
     schedule.run_pending()
