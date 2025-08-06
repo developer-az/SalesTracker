@@ -1,0 +1,255 @@
+:root {
+  --primary-color: #000000;
+  --secondary-color: #ffffff;
+  --accent-color: #666666;
+  --error-color: #ff4444;
+  --success-color: #00c853;
+  --background-color: #f8f8f8;
+  --input-border: #e0e0e0;
+  --hover-color: #333333;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background-color);
+  color: var(--primary-color);
+  line-height: 1.6;
+}
+
+.webpage {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header Styles */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background-color: var(--secondary-color);
+  border-bottom: 1px solid var(--input-border);
+}
+
+.logo-text {
+  font-size: 1.2rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.about-us {
+  cursor: pointer;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.about-us:hover {
+  background-color: var(--background-color);
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: var(--secondary-color);
+  min-width: 200px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+  margin-top: 0.5rem;
+}
+
+.dropdown-content.show {
+  display: block;
+}
+
+.dropdown-content .linkedIn {
+  display: block;
+  padding: 0.8rem 1.5rem;
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.dropdown-content .linkedIn:hover {
+  background-color: var(--background-color);
+  color: var(--accent-color);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.form-container {
+  background-color: var(--secondary-color);
+  padding: 3rem;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.welcome-content {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.welcome-content h1 {
+  font-size: 2.5rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  color: var(--accent-color);
+  font-size: 1.1rem;
+  font-weight: 300;
+}
+
+/* Form Styles */
+.premium-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--accent-color);
+}
+
+.form-group input {
+  padding: 1rem;
+  border: 1px solid var(--input-border);
+  border-radius: 0;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: var(--background-color);
+}
+
+.help-text {
+  font-size: 0.8rem;
+  color: var(--accent-color);
+  margin-top: 0.3rem;
+}
+
+.submit-button {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  padding: 1rem;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.submit-button:hover {
+  background-color: var(--hover-color);
+}
+
+/* Message Styles */
+.message {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.message.error {
+  background-color: #fff5f5;
+  border-left: 4px solid var(--error-color);
+  color: var(--error-color);
+}
+
+.message.success {
+  background-color: #f5fff7;
+  border-left: 4px solid var(--success-color);
+  color: var(--success-color);
+}
+
+/* Scroll to Top Button */
+#button {
+  display: none;
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+#button:hover {
+  background-color: var(--hover-color);
+  transform: translateY(-2px);
+}
+
+/* Footer */
+.footer {
+  background-color: var(--secondary-color);
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--accent-color);
+  border-top: 1px solid var(--input-border);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-container {
+    padding: 2rem;
+  }
+
+  .welcome-content h1 {
+    font-size: 2rem;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+  }
+}

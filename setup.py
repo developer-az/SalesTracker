@@ -7,9 +7,10 @@ Usage:
 
 from setuptools import setup
 
-APP = ['send_email.py']
+APP = ['main.py']
 DATA_FILES = []
-OPTIONS = {}
+OPTIONS = {
+}
 
 setup(
     app=APP,
