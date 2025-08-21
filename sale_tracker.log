@@ -125,3 +125,9 @@
  * Running on http://127.0.0.1:5000
  * Running on http://172.17.101.21:5000
 2025-08-21 03:50:54,708 - INFO - [33mPress CTRL+C to quit[0m
+2025-08-21 09:10:32,438 - ERROR - Failed to scrape Lululemon product: HTTPSConnectionPool(host='shop.lululemon.com', port=443): Max retries exceeded with url: /p/mens-jackets-and-outerwear/Down-For-It-All-Hoodie/_/prod9200786?color=0001 (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fbf3b193200>: Failed to resolve 'shop.lululemon.com' ([Errno -5] No address associated with hostname)"))
+2025-08-21 09:10:32,440 - ERROR - Failed to scrape Nike product: HTTPSConnectionPool(host='www.nike.com', port=443): Max retries exceeded with url: /t/unlimited-mens-repel-hooded-versatile-jacket-56pDjs/FB7551-010 (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x7fbf3b197440>: Failed to resolve 'www.nike.com' ([Errno -5] No address associated with hostname)"))
+2025-08-21 09:10:32,445 - ERROR - Unexpected error scraping Lululemon product: Connection error
+2025-08-21 09:10:32,446 - INFO - Successfully scraped Lululemon product: Test Product - $100USD
+2025-08-21 09:10:32,447 - WARNING - No JSON-LD data found for Nike product
+2025-08-21 09:10:32,448 - INFO - Successfully scraped Nike product: Nike Test Product - $150USD
