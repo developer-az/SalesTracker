@@ -5,22 +5,8 @@ services:
     plan: free
     autoDeploy: true
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -b 0.0.0.0:$PORT web_app:app
-    envVars:
-      - key: FLASK_ENV
-        value: production
-      - key: SENDER_EMAIL
-        sync: false
-      - key: EMAIL_PASSWORD
-        sync: false
-
-  - type: worker
-    name: sale-tracker-scheduler
-    env: python
-    plan: free
-    autoDeploy: true
-    buildCommand: pip install -r requirements.txt
-    startCommand: python -c "import main_improved as m; m.run_scheduler()"
+    # Run web app and scheduler in the same service (free plan workaround)
+    startCommand: bash -lc "gunicorn -b 0.0.0.0:$PORT web_app:app & python -c 'import main_improved as m; m.run_scheduler()'"
     envVars:
       - key: FLASK_ENV
         value: production
