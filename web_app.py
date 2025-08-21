@@ -15,6 +15,7 @@ import time
 import main_improved
 import config
 import recipients_store
+import subscriptions_store
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
@@ -94,7 +95,8 @@ def api_scrape():
 def api_send_test_email():
     """API endpoint to send a test email."""
     try:
-        main_improved.send_combined_email()
+        # Prefer personalized emails if subscriptions exist; else fallback
+        main_improved.send_personalized_emails()
         app_state.last_email_sent = datetime.now().isoformat()
         return jsonify({
             'success': True,
@@ -191,6 +193,34 @@ def api_recipients():
 
         if request.method == 'DELETE':
             result = recipients_store.remove_recipient(email)
+            status = 200 if result.get('success') else 404
+            return jsonify(result), status
+
+        return jsonify({'success': False, 'error': 'Unsupported method'}), 405
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/subscriptions', methods=['GET', 'POST', 'DELETE'])
+def api_subscriptions():
+    try:
+        if request.method == 'GET':
+            email = (request.args.get('email') or '').strip().lower()
+            if email:
+                return jsonify({'success': True, 'products': subscriptions_store.get_products(email)})
+            return jsonify({'success': True, 'all': subscriptions_store.list_all_subscriptions()})
+
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip().lower()
+        url = (data.get('url') or '').strip()
+
+        if request.method == 'POST':
+            result = subscriptions_store.add_product(email, url)
+            status = 200 if result.get('success') else 400
+            return jsonify(result), status
+
+        if request.method == 'DELETE':
+            result = subscriptions_store.remove_product(email, url)
             status = 200 if result.get('success') else 404
             return jsonify(result), status
 

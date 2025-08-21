@@ -158,6 +158,52 @@ The built app will be in `dist/Sale Tracker.app`
 
 ### Linux/Windows Executable
 
+## ☁️ Free Hosting Recommendation
+
+Best free option for this project: Render (or Railway/Fly.io)
+
+- Why: Runs long-lived Python processes (web + background worker) for free tier; easy deploy from Git repo; supports Procfile.
+- Not ideal: Vercel/Cloudflare Pages are serverless/static and cannot run the scheduler continuously.
+
+### Deploy on Render (free tier)
+
+1) Push this repo to GitHub.
+
+2) Create two Render services:
+
+- Web Service
+  - Build Command: `pip install -r requirements.txt`
+  - Start Command: `gunicorn -b 0.0.0.0:$PORT web_app:app`
+
+- Background Worker
+  - Build Command: `pip install -r requirements.txt`
+  - Start Command: `python -c "import main_improved as m; m.run_scheduler()"`
+
+3) Set environment variables in both services:
+```
+SENDER_EMAIL=...
+EMAIL_PASSWORD=...
+FLASK_ENV=production
+```
+
+4) Optional: Use Docker on Render
+   - Add a Render Blueprint or connect repo and choose Docker.
+   - This repo includes a `Dockerfile` using Gunicorn.
+
+### Deploy on Railway (alternative)
+
+1) New Project → Deploy from GitHub
+2) Add two services from the same repo:
+   - Web: `gunicorn -b 0.0.0.0:$PORT web_app:app`
+   - Worker: `python -c "import main_improved as m; m.run_scheduler()"`
+3) Add env vars as above.
+
+### Cron-based (serverless) alternative
+
+If you must use Vercel/Cloudflare Pages:
+- Host only the web UI/API.
+- Run the scheduler via an external cron (GitHub Actions nightly) that hits a secure endpoint to trigger emails.
+
 ```bash
 # Install PyInstaller
 pip3 install --break-system-packages pyinstaller

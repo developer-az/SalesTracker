@@ -14,6 +14,7 @@ from datetime import datetime
 from typing import List, Tuple, Optional
 import config
 import recipients_store
+import subscriptions_store
 
 # Set up logging
 logging.basicConfig(
@@ -128,7 +129,7 @@ def scrape_nike(product_link: str) -> Tuple[str, str, str]:
         return "Product name not found", "Price not found", ""
 
 def send_combined_email() -> None:
-    """Send combined email with all product information."""
+    """Send combined email with all product information (global list)."""
     try:
         sender_email, sender_password, recipient_emails = get_email_credentials()
         
@@ -212,6 +213,90 @@ def send_combined_email() -> None:
     except Exception as e:
         logger.error(f"Failed to send combined email: {e}")
 
+
+def send_personalized_emails() -> None:
+    """Send personalized emails per recipient based on their subscriptions."""
+    try:
+        sender_email, sender_password, recipient_emails = get_email_credentials()
+        all_subs = subscriptions_store.list_all_subscriptions()
+
+        server = smtplib.SMTP(config.EMAIL_SETTINGS["smtp_server"], config.EMAIL_SETTINGS["smtp_port"])
+        server.starttls()
+        server.login(sender_email, sender_password)
+
+        for recipient in set(recipient_emails):
+            products = all_subs.get(recipient.lower(), [])
+            # Fallback to global products if user has none
+            if not products:
+                logger.info(f"No personalized products for {recipient}, using global config list")
+                per_user_links = []
+                for company, links in config.PRODUCT_LINKS.items():
+                    for link in links:
+                        per_user_links.append({"company": company, "url": link})
+            else:
+                per_user_links = products
+
+            collected = []
+            subject_prices: List[str] = []
+            for entry in per_user_links:
+                company = entry.get("company")
+                link = entry.get("url")
+                if company == "lululemon":
+                    name, price, image = scrape_lululemon(link)
+                elif company == "nike":
+                    name, price, image = scrape_nike(link)
+                else:
+                    continue
+                collected.append((name, price, image, link, company))
+                subject_prices.append(price.replace("USD", "").replace("$", "").strip())
+
+            if not collected:
+                logger.info(f"No products to email for {recipient}")
+                continue
+
+            # Compose email
+            message = MIMEMultipart()
+            message['From'] = sender_email
+            message['To'] = recipient
+            subject_prices_str = ", ".join(subject_prices)
+            message['Subject'] = f"{subject_prices_str} – Your Tracked Products ({datetime.now().strftime('%Y-%m-%d')})"
+
+            html_lines = [
+                "<html><body>",
+                f"<h2>Your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>"
+            ]
+            for name, price, image, link, company in collected:
+                card = f"""
+                <div style=\"width: 100%; text-align: center;\">
+                    <div style=\"
+                        display: inline-block;
+                        border: 1px solid #ccc;
+                        padding: 20px;
+                        margin-bottom: 20px;
+                        max-width: 400px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    \">
+                        <a href=\"{link}\" target=\"_blank\" style=\"text-decoration: none; color: inherit;\">
+                            <h3 style=\"margin: 0 0 10px 0; color: #333;\">{name}</h3>
+                            <p style=\"font-size: 18px; font-weight: bold; color: #e74c3c; margin: 10px 0;\">{price}</p>
+                            <p style=\"font-size: 12px; color: #666; margin: 5px 0;\">{company.upper()}</p>
+                            {f'<img src="{image}" alt="{name}" style="width: 80%; max-width: 300px; height: auto; border-radius: 4px;" />' if image else ''}
+                        </a>
+                    </div>
+                </div>
+                """
+                html_lines.append(card)
+            html_lines.append("</body></html>")
+            message.attach(MIMEText("\n".join(html_lines), 'html'))
+
+            server.sendmail(sender_email, recipient, message.as_string())
+            logger.info(f"Personalized email sent to {recipient}")
+
+        server.quit()
+    except Exception as e:
+        logger.error(f"Failed to send personalized emails: {e}")
+
 def resource_path(relative_path: str) -> str:
     """Get absolute path to resource, works for dev and for PyInstaller."""
     if getattr(sys, 'frozen', False):  # Bundled with py2app
@@ -225,7 +310,8 @@ def run_scheduler() -> None:
     logger.info("Starting Sale Tracker scheduler")
     logger.info(f"Emails will be sent daily at {config.EMAIL_SETTINGS['schedule_time']}")
     
-    schedule.every().day.at(config.EMAIL_SETTINGS["schedule_time"]).do(send_combined_email)
+    # Use personalized emails when available
+    schedule.every().day.at(config.EMAIL_SETTINGS["schedule_time"]).do(send_personalized_emails)
     
     # Send immediately for testing (uncomment the next line to test)
     # send_combined_email()

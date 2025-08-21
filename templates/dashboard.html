@@ -131,6 +131,43 @@
             </div>
         </div>
 
+        <!-- Subscriptions Management -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Product Subscriptions</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <form @submit.prevent="addSubscription">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Add a product URL for your email</label>
+                        <div class="space-y-3">
+                            <input x-model="subEmail" type="email" required placeholder="you@example.com" class="w-full border rounded px-3 py-2" />
+                            <input x-model="subUrl" type="url" required placeholder="https://shop.lululemon.com/... or https://www.nike.com/t/..." class="w-full border rounded px-3 py-2" />
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Add Product</button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Currently supports Lululemon and Nike product pages.</p>
+                    </form>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">View your subscriptions</label>
+                    <div class="flex gap-3 mb-3">
+                        <input x-model="subListEmail" type="email" placeholder="you@example.com" class="flex-1 border rounded px-3 py-2" />
+                        <button @click="loadSubscriptions()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded">Load</button>
+                    </div>
+                    <div class="space-y-2" x-show="subscriptions.length > 0">
+                        <template x-for="item in subscriptions" :key="item.url">
+                            <div class="flex items-center justify-between border rounded px-3 py-2">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-800" x-text="item.company.toUpperCase()"></div>
+                                    <a :href="item.url" target="_blank" class="text-sm text-blue-600 hover:text-blue-800" x-text="item.url"></a>
+                                </div>
+                                <button @click="removeSubscription(item.url)" class="text-sm text-red-600 hover:text-red-800">Remove</button>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="subscriptions.length === 0" class="text-gray-500 text-sm">No subscriptions loaded.</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Products Grid -->
         <div class="bg-white rounded-lg shadow-md p-6">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">
@@ -205,6 +242,11 @@
                 messageType: 'success',
                 recipients: [],
                 recipientEmail: '',
+                // Subscriptions state
+                subEmail: '',
+                subUrl: '',
+                subListEmail: '',
+                subscriptions: [],
 
                 async loadData() {
                     try {
@@ -225,6 +267,10 @@
                         const recRes = await fetch('/api/recipients');
                         const recData = await recRes.json();
                         if (recData.success) this.recipients = recData.recipients;
+                        // Load subscriptions if an email is set
+                        if (this.subListEmail) {
+                            await this.loadSubscriptions();
+                        }
                         
                     } catch (error) {
                         this.showMessage('Failed to load data: ' + error.message, 'error');
@@ -248,6 +294,59 @@
                         this.showMessage('Error: ' + error.message, 'error');
                     }
                     this.loading = false;
+                },
+
+                async addSubscription() {
+                    try {
+                        const response = await fetch('/api/subscriptions', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: this.subEmail, url: this.subUrl })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.showMessage('Product added to your subscriptions', 'success');
+                            this.subUrl = '';
+                            if (this.subListEmail === this.subEmail) this.loadSubscriptions();
+                        } else {
+                            this.showMessage(data.error || 'Failed to add product', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('Error adding product: ' + e.message, 'error');
+                    }
+                },
+
+                async loadSubscriptions() {
+                    try {
+                        const response = await fetch('/api/subscriptions?email=' + encodeURIComponent(this.subListEmail));
+                        const data = await response.json();
+                        if (data.success) {
+                            this.subscriptions = data.products || [];
+                        } else {
+                            this.showMessage(data.error || 'Failed to load subscriptions', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('Error loading subscriptions: ' + e.message, 'error');
+                    }
+                },
+
+                async removeSubscription(url) {
+                    try {
+                        const response = await fetch('/api/subscriptions', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: this.subListEmail, url })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.showMessage('Subscription removed', 'success');
+                            this.subscriptions = this.subscriptions.filter(i => i.url !== url);
+                        } else {
+                            this.showMessage(data.error || 'Failed to remove subscription', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('Error removing subscription: ' + e.message, 'error');
+                    }
                 },
 
                 async addRecipient() {
