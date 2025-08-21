@@ -37,11 +37,13 @@ app_state = WebAppState()
 @app.route('/')
 def index():
     """Main dashboard page."""
+    scheduler_text = "Scheduled via GitHub Actions" if CRON_TOKEN else None
     return render_template('dashboard.html', 
                          products=app_state.last_scrape_results,
                          is_running=app_state.is_running,
                          last_email=app_state.last_email_sent,
-                         config=config)
+                         config=config,
+                         scheduler_text=scheduler_text)
 
 @app.route('/api/scrape')
 def api_scrape():

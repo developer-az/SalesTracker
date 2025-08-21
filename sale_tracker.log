@@ -80,3 +80,48 @@
 2025-08-21 03:27:55,870 - INFO - Successfully scraped Nike product: Nike Unlimited Men's Repel Hooded Versatile Jacket - $110USD
 2025-08-21 03:27:55,946 - WARNING -  * Debugger is active!
 2025-08-21 03:27:55,957 - INFO -  * Debugger PIN: 128-951-659
+2025-08-21 03:42:28,332 - INFO - No personalized products for dingandy28@gmail.com, using global config list
+2025-08-21 03:42:28,441 - INFO - Successfully scraped Lululemon product: Down for It All Hoodie | Men's Coats & Jackets | lululemon - $228USD
+2025-08-21 03:42:28,685 - INFO - Successfully scraped Lululemon product: Pace Breaker Jacket | Men's Coats & Jackets | lululemon - $168USD
+2025-08-21 03:42:29,477 - INFO - Successfully scraped Nike product: Nike Unlimited Men's Repel Hooded Versatile Jacket - $110USD
+2025-08-21 03:42:30,256 - INFO - Personalized email sent to dingandy28@gmail.com
+2025-08-21 03:42:30,256 - INFO - No personalized products for svcdaisy@gmail.com, using global config list
+2025-08-21 03:42:30,688 - INFO - Successfully scraped Lululemon product: Down for It All Hoodie | Men's Coats & Jackets | lululemon - $228USD
+2025-08-21 03:42:31,028 - INFO - Successfully scraped Lululemon product: Pace Breaker Jacket | Men's Coats & Jackets | lululemon - $168USD
+2025-08-21 03:42:32,030 - INFO - Successfully scraped Nike product: Nike Unlimited Men's Repel Hooded Versatile Jacket - $110USD
+2025-08-21 03:42:32,621 - INFO - Personalized email sent to svcdaisy@gmail.com
+2025-08-21 03:42:32,660 - INFO - 127.0.0.1 - - [21/Aug/2025 03:42:32] "GET /api/send-test-email HTTP/1.1" 200 -
+2025-08-21 03:45:50,407 - INFO - Initializing with initial scrape...
+2025-08-21 03:45:50,607 - INFO - Successfully scraped Lululemon product: Down for It All Hoodie | Men's Coats & Jackets | lululemon - $228USD
+2025-08-21 03:45:50,944 - INFO - Successfully scraped Lululemon product: Pace Breaker Jacket | Men's Coats & Jackets | lululemon - $168USD
+2025-08-21 03:45:52,197 - INFO - Successfully scraped Nike product: Nike Unlimited Men's Repel Hooded Versatile Jacket - $110USD
+2025-08-21 03:46:31,205 - INFO - Initializing with initial scrape...
+2025-08-21 03:46:31,506 - INFO - Successfully scraped Lululemon product: Down for It All Hoodie | Men's Coats & Jackets | lululemon - $228USD
+2025-08-21 03:46:31,778 - INFO - Successfully scraped Lululemon product: Pace Breaker Jacket | Men's Coats & Jackets | lululemon - $168USD
+2025-08-21 03:46:32,215 - INFO - Successfully scraped Nike product: Nike Unlimited Men's Repel Hooded Versatile Jacket - $110USD
+2025-08-21 03:47:07,980 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.17.101.21:5000
+2025-08-21 03:47:07,982 - INFO - [33mPress CTRL+C to quit[0m
+2025-08-21 03:47:11,498 - INFO - No personalized products for dingandy28@gmail.com, using global config list
+2025-08-21 03:47:11,826 - INFO - Successfully scraped Lululemon product: Down for It All Hoodie | Men's Coats & Jackets | lululemon - $228USD
+2025-08-21 03:47:12,221 - INFO - Successfully scraped Lululemon product: Pace Breaker Jacket | Men's Coats & Jackets | lululemon - $168USD
+2025-08-21 03:47:13,993 - INFO - Successfully scraped Nike product: Nike Unlimited Men's Repel Hooded Versatile Jacket - $110USD
+2025-08-21 03:47:24,129 - INFO - Personalized email sent to dingandy28@gmail.com
+2025-08-21 03:47:24,130 - INFO - No personalized products for svcdaisy@gmail.com, using global config list
+2025-08-21 03:47:14,584 - INFO - Successfully scraped Lululemon product: Down for It All Hoodie | Men's Coats & Jackets | lululemon - $228USD
+2025-08-21 03:47:14,903 - INFO - Successfully scraped Lululemon product: Pace Breaker Jacket | Men's Coats & Jackets | lululemon - $168USD
+2025-08-21 03:47:15,503 - INFO - Successfully scraped Nike product: Nike Unlimited Men's Repel Hooded Versatile Jacket - $110USD
+2025-08-21 03:47:16,043 - INFO - Personalized email sent to svcdaisy@gmail.com
+2025-08-21 03:47:16,070 - INFO - 127.0.0.1 - - [21/Aug/2025 03:47:16] "GET /api/send-test-email HTTP/1.1" 200 -
+2025-08-21 03:50:01,422 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.17.101.21:5000
+2025-08-21 03:50:01,423 - INFO - [33mPress CTRL+C to quit[0m
+2025-08-21 03:50:54,708 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.17.101.21:5000
+2025-08-21 03:50:54,708 - INFO - [33mPress CTRL+C to quit[0m

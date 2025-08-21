@@ -22,9 +22,13 @@
                 <div class="flex space-x-4">
                     <div class="text-right">
                         <div class="text-sm text-gray-500">Status</div>
+                        {% if scheduler_text %}
+                        <div class="font-semibold text-blue-700">{{ scheduler_text }}</div>
+                        {% else %}
                         <div :class="isRunning ? 'text-green-600' : 'text-red-600'" class="font-semibold">
                             <span x-text="isRunning ? 'Running' : 'Stopped'"></span>
                         </div>
+                        {% endif %}
                     </div>
                     <div class="text-right" x-show="lastEmail">
                         <div class="text-sm text-gray-500">Last Email</div>
