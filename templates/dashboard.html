@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sale Tracker Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div x-data="dashboard()" x-init="loadData()" class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Sale Tracker Dashboard</h1>
+                    <p class="text-gray-600 mt-2">Monitor product prices from Lululemon and Nike</p>
+                </div>
+                <div class="flex space-x-4">
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">Status</div>
+                        <div :class="isRunning ? 'text-green-600' : 'text-red-600'" class="font-semibold">
+                            <span x-text="isRunning ? 'Running' : 'Stopped'"></span>
+                        </div>
+                    </div>
+                    <div class="text-right" x-show="lastEmail">
+                        <div class="text-sm text-gray-500">Last Email</div>
+                        <div class="font-semibold text-gray-800" x-text="formatDate(lastEmail)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Control Panel</h2>
+            <div class="flex flex-wrap gap-4">
+                <button @click="scrapeProducts()" 
+                        :disabled="loading"
+                        class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    <span x-show="!loading">🔄 Scrape Products</span>
+                    <span x-show="loading">⏳ Scraping...</span>
+                </button>
+                
+                <button @click="sendTestEmail()" 
+                        :disabled="loading"
+                        class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    <span x-show="!loading">📧 Send Test Email</span>
+                    <span x-show="loading">⏳ Sending...</span>
+                </button>
+                
+                <button @click="toggleScheduler()" 
+                        :disabled="loading"
+                        :class="isRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
+                        class="disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    <span x-text="isRunning ? '⏹️ Stop Scheduler' : '▶️ Start Scheduler'"></span>
+                </button>
+                
+                <button @click="loadData()" 
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div x-show="message" x-transition class="mb-6">
+            <div :class="messageType === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700'" 
+                 class="border-l-4 p-4 rounded">
+                <p x-text="message"></p>
+            </div>
+        </div>
+
+        <!-- Configuration Info -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Configuration</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-2">Email Settings</h3>
+                    <div class="text-sm text-gray-600 space-y-1">
+                        <div>SMTP: {{ config.EMAIL_SETTINGS.smtp_server }}:{{ config.EMAIL_SETTINGS.smtp_port }}</div>
+                        <div>Schedule: {{ config.EMAIL_SETTINGS.schedule_time }}</div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-2">Product Tracking</h3>
+                    <div class="text-sm text-gray-600 space-y-1">
+                        <div>Lululemon: {{ config.PRODUCT_LINKS.lululemon|length }} products</div>
+                        <div>Nike: {{ config.PRODUCT_LINKS.nike|length }} products</div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-2">Scraping Settings</h3>
+                    <div class="text-sm text-gray-600 space-y-1">
+                        <div>Timeout: {{ config.SCRAPING_SETTINGS.timeout }}s</div>
+                        <div>Retries: {{ config.SCRAPING_SETTINGS.retry_attempts }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recipients Management -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Email Recipients</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <form @submit.prevent="addRecipient">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Add your email to receive notifications</label>
+                        <div class="flex gap-3">
+                            <input x-model="recipientEmail" type="email" required placeholder="you@example.com" class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-300" />
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Add</button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">We will send price updates to this address.</p>
+                    </form>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Current recipients</label>
+                    <div class="space-y-2" x-show="recipients.length > 0">
+                        <template x-for="email in recipients" :key="email">
+                            <div class="flex items-center justify-between border rounded px-3 py-2">
+                                <span class="text-gray-800" x-text="email"></span>
+                                <button @click="removeRecipient(email)" class="text-sm text-red-600 hover:text-red-800">Remove</button>
+                            </div>
+                        </template>
+                    </div>
+                    <div x-show="recipients.length === 0" class="text-gray-500 text-sm">No recipients yet. Add your email to get notified.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                Tracked Products 
+                <span x-show="products.length > 0" class="text-sm font-normal text-gray-500">
+                    (Last updated: <span x-text="formatDate(lastUpdate)"></span>)
+                </span>
+            </h2>
+            
+            <div x-show="products.length === 0" class="text-center py-12 text-gray-500">
+                <div class="text-4xl mb-4">📦</div>
+                <p>No products scraped yet. Click "Scrape Products" to start!</p>
+            </div>
+
+            <div x-show="products.length > 0" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="product in products" :key="product.link">
+                    <div class="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                        <!-- Product Image -->
+                        <div class="aspect-w-16 aspect-h-9 bg-gray-200">
+                            <img x-show="product.image" 
+                                 :src="product.image" 
+                                 :alt="product.name"
+                                 class="w-full h-48 object-cover"
+                                 @error="$event.target.style.display = 'none'">
+                            <div x-show="!product.image" class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                <span class="text-gray-400 text-4xl">📦</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Product Info -->
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span :class="product.company === 'lululemon' ? 'bg-red-100 text-red-800' : 'bg-black text-white'" 
+                                      class="px-2 py-1 rounded text-xs font-medium uppercase" 
+                                      x-text="product.company"></span>
+                                <span :class="product.success ? 'text-green-600' : 'text-red-600'" 
+                                      class="text-xs">
+                                    <span x-text="product.success ? '✅' : '❌'"></span>
+                                </span>
+                            </div>
+                            
+                            <h3 class="font-semibold text-gray-800 mb-2 line-clamp-2" x-text="product.name"></h3>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg font-bold" 
+                                      :class="product.success ? 'text-green-600' : 'text-red-600'" 
+                                      x-text="product.price"></span>
+                                <a :href="product.link" 
+                                   target="_blank" 
+                                   class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    View →
+                                </a>
+                            </div>
+                            
+                            <div class="mt-2 text-xs text-gray-500" x-text="formatDate(product.timestamp)"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function dashboard() {
+            return {
+                products: [],
+                isRunning: false,
+                lastEmail: null,
+                lastUpdate: null,
+                loading: false,
+                message: '',
+                messageType: 'success',
+                recipients: [],
+                recipientEmail: '',
+
+                async loadData() {
+                    try {
+                        const response = await fetch('/api/scrape');
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.products = data.products;
+                            this.lastUpdate = data.timestamp;
+                        }
+                        
+                        // Load status
+                        const statusResponse = await fetch('/api/status');
+                        const statusData = await statusResponse.json();
+                        this.isRunning = statusData.is_running;
+                        this.lastEmail = statusData.last_email_sent;
+                        // Load recipients
+                        const recRes = await fetch('/api/recipients');
+                        const recData = await recRes.json();
+                        if (recData.success) this.recipients = recData.recipients;
+                        
+                    } catch (error) {
+                        this.showMessage('Failed to load data: ' + error.message, 'error');
+                    }
+                },
+
+                async scrapeProducts() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/scrape');
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.products = data.products;
+                            this.lastUpdate = data.timestamp;
+                            this.showMessage('Products scraped successfully!', 'success');
+                        } else {
+                            this.showMessage('Failed to scrape products: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        this.showMessage('Error: ' + error.message, 'error');
+                    }
+                    this.loading = false;
+                },
+
+                async addRecipient() {
+                    try {
+                        const response = await fetch('/api/recipients', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: this.recipientEmail })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.showMessage('Added recipient successfully', 'success');
+                            this.recipientEmail = '';
+                            const recRes = await fetch('/api/recipients');
+                            const recData = await recRes.json();
+                            if (recData.success) this.recipients = recData.recipients;
+                        } else {
+                            this.showMessage(data.error || 'Failed to add recipient', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('Error adding recipient: ' + e.message, 'error');
+                    }
+                },
+
+                async removeRecipient(email) {
+                    try {
+                        const response = await fetch('/api/recipients', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.showMessage('Recipient removed', 'success');
+                            this.recipients = this.recipients.filter(e => e !== email);
+                        } else {
+                            this.showMessage(data.error || 'Failed to remove recipient', 'error');
+                        }
+                    } catch (e) {
+                        this.showMessage('Error removing recipient: ' + e.message, 'error');
+                    }
+                },
+
+                async sendTestEmail() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/send-test-email');
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.lastEmail = data.timestamp;
+                            this.showMessage('Test email sent successfully!', 'success');
+                        } else {
+                            this.showMessage('Failed to send email: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        this.showMessage('Error: ' + error.message, 'error');
+                    }
+                    this.loading = false;
+                },
+
+                async toggleScheduler() {
+                    this.loading = true;
+                    try {
+                        const endpoint = this.isRunning ? '/api/stop-scheduler' : '/api/start-scheduler';
+                        const response = await fetch(endpoint);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.isRunning = data.is_running;
+                            this.showMessage(data.message, 'success');
+                        } else {
+                            this.showMessage('Failed to toggle scheduler: ' + data.error, 'error');
+                        }
+                    } catch (error) {
+                        this.showMessage('Error: ' + error.message, 'error');
+                    }
+                    this.loading = false;
+                },
+
+                showMessage(text, type = 'success') {
+                    this.message = text;
+                    this.messageType = type;
+                    setTimeout(() => {
+                        this.message = '';
+                    }, 5000);
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return 'Never';
+                    return new Date(dateString).toLocaleString();
+                }
+            }
+        }
+    </script>
+</body>
+</html>

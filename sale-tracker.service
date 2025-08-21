@@ -1,0 +1,21 @@
+[Unit]
+Description=Sale Tracker - Product Price Monitoring Service
+After=network.target
+
+[Service]
+Type=simple
+User=azhou112
+WorkingDirectory=/home/azhou112/SaleTracker
+ExecStart=/usr/bin/python3 /home/azhou112/SaleTracker/main_improved.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables (optional - can also use .env file)
+# Environment=SENDER_EMAIL=your-email@gmail.com
+# Environment=EMAIL_PASSWORD=your-app-password
+# Environment=RECIPIENT_EMAIL=recipient@example.com
+
+[Install]
+WantedBy=multi-user.target
