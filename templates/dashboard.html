@@ -34,36 +34,9 @@
             </div>
         </div>
 
-        <!-- Control Panel -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Control Panel</h2>
-            <div class="flex flex-wrap gap-4">
-                <button @click="scrapeProducts()" 
-                        :disabled="loading"
-                        class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                    <span x-show="!loading">🔄 Scrape Products</span>
-                    <span x-show="loading">⏳ Scraping...</span>
-                </button>
-                
-                <button @click="sendTestEmail()" 
-                        :disabled="loading"
-                        class="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                    <span x-show="!loading">📧 Send Test Email</span>
-                    <span x-show="loading">⏳ Sending...</span>
-                </button>
-                
-                <button @click="toggleScheduler()" 
-                        :disabled="loading"
-                        :class="isRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
-                        class="disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                    <span x-text="isRunning ? '⏹️ Stop Scheduler' : '▶️ Start Scheduler'"></span>
-                </button>
-                
-                <button @click="loadData()" 
-                        class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                    🔄 Refresh
-                </button>
-            </div>
+        <!-- Minimal Message -->
+        <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded p-4 mb-6">
+            Add your email and product URLs below. You’ll receive a daily email at 9 PM.
         </div>
 
         <!-- Status Messages -->
@@ -74,98 +47,45 @@
             </div>
         </div>
 
-        <!-- Configuration Info -->
+        <!-- Remove configuration block for minimal UI -->
+
+        <!-- Minimal: Email + Product URL -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Configuration</h2>
-            <div class="grid md:grid-cols-3 gap-6">
-                <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Email Settings</h3>
-                    <div class="text-sm text-gray-600 space-y-1">
-                        <div>SMTP: {{ config.EMAIL_SETTINGS.smtp_server }}:{{ config.EMAIL_SETTINGS.smtp_port }}</div>
-                        <div>Schedule: {{ config.EMAIL_SETTINGS.schedule_time }}</div>
-                    </div>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Get Notified</h2>
+            <form @submit.prevent="addRecipient" class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Your Email</label>
+                <div class="flex gap-3">
+                    <input x-model="recipientEmail" type="email" required placeholder="you@example.com" class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-300" />
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Save Email</button>
                 </div>
-                <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Product Tracking</h3>
-                    <div class="text-sm text-gray-600 space-y-1">
-                        <div>Lululemon: {{ config.PRODUCT_LINKS.lululemon|length }} products</div>
-                        <div>Nike: {{ config.PRODUCT_LINKS.nike|length }} products</div>
-                    </div>
+                <p class="text-xs text-gray-500 mt-2">We’ll send a daily email at 9 PM.</p>
+            </form>
+            <form @submit.prevent="addSubscription">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Product URL</label>
+                <div class="space-y-3">
+                    <input x-model="subEmail" type="email" required placeholder="you@example.com" class="w-full border rounded px-3 py-2" />
+                    <input x-model="subUrl" type="url" required placeholder="https://shop.lululemon.com/... or https://www.nike.com/t/..." class="w-full border rounded px-3 py-2" />
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Add Product</button>
                 </div>
-                <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Scraping Settings</h3>
-                    <div class="text-sm text-gray-600 space-y-1">
-                        <div>Timeout: {{ config.SCRAPING_SETTINGS.timeout }}s</div>
-                        <div>Retries: {{ config.SCRAPING_SETTINGS.retry_attempts }}</div>
-                    </div>
-                </div>
-            </div>
+            </form>
         </div>
 
-        <!-- Recipients Management -->
+        <!-- Minimal Subscriptions List -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Email Recipients</h2>
-            <div class="grid md:grid-cols-2 gap-6">
-                <div>
-                    <form @submit.prevent="addRecipient">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Add your email to receive notifications</label>
-                        <div class="flex gap-3">
-                            <input x-model="recipientEmail" type="email" required placeholder="you@example.com" class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring focus:border-blue-300" />
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Add</button>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">We will send price updates to this address.</p>
-                    </form>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Current recipients</label>
-                    <div class="space-y-2" x-show="recipients.length > 0">
-                        <template x-for="email in recipients" :key="email">
-                            <div class="flex items-center justify-between border rounded px-3 py-2">
-                                <span class="text-gray-800" x-text="email"></span>
-                                <button @click="removeRecipient(email)" class="text-sm text-red-600 hover:text-red-800">Remove</button>
-                            </div>
-                        </template>
-                    </div>
-                    <div x-show="recipients.length === 0" class="text-gray-500 text-sm">No recipients yet. Add your email to get notified.</div>
-                </div>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Subscriptions</h2>
+            <div class="flex gap-3 mb-3">
+                <input x-model="subListEmail" type="email" placeholder="you@example.com" class="flex-1 border rounded px-3 py-2" />
+                <button @click="loadSubscriptions()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded">Load</button>
             </div>
-        </div>
-
-        <!-- Subscriptions Management -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Product Subscriptions</h2>
-            <div class="grid md:grid-cols-2 gap-6">
-                <div>
-                    <form @submit.prevent="addSubscription">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Add a product URL for your email</label>
-                        <div class="space-y-3">
-                            <input x-model="subEmail" type="email" required placeholder="you@example.com" class="w-full border rounded px-3 py-2" />
-                            <input x-model="subUrl" type="url" required placeholder="https://shop.lululemon.com/... or https://www.nike.com/t/..." class="w-full border rounded px-3 py-2" />
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Add Product</button>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Currently supports Lululemon and Nike product pages.</p>
-                    </form>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">View your subscriptions</label>
-                    <div class="flex gap-3 mb-3">
-                        <input x-model="subListEmail" type="email" placeholder="you@example.com" class="flex-1 border rounded px-3 py-2" />
-                        <button @click="loadSubscriptions()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded">Load</button>
+            <div class="space-y-2" x-show="subscriptions.length > 0">
+                <template x-for="item in subscriptions" :key="item.url">
+                    <div class="flex items-center justify-between border rounded px-3 py-2">
+                        <a :href="item.url" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 truncate" x-text="item.url"></a>
+                        <button @click="removeSubscription(item.url)" class="text-sm text-red-600 hover:text-red-800">Remove</button>
                     </div>
-                    <div class="space-y-2" x-show="subscriptions.length > 0">
-                        <template x-for="item in subscriptions" :key="item.url">
-                            <div class="flex items-center justify-between border rounded px-3 py-2">
-                                <div>
-                                    <div class="text-sm font-medium text-gray-800" x-text="item.company.toUpperCase()"></div>
-                                    <a :href="item.url" target="_blank" class="text-sm text-blue-600 hover:text-blue-800" x-text="item.url"></a>
-                                </div>
-                                <button @click="removeSubscription(item.url)" class="text-sm text-red-600 hover:text-red-800">Remove</button>
-                            </div>
-                        </template>
-                    </div>
-                    <div x-show="subscriptions.length === 0" class="text-gray-500 text-sm">No subscriptions loaded.</div>
-                </div>
+                </template>
             </div>
+            <div x-show="subscriptions.length === 0" class="text-gray-500 text-sm">No subscriptions loaded.</div>
         </div>
 
         <!-- Products Grid -->
@@ -277,24 +197,7 @@
                     }
                 },
 
-                async scrapeProducts() {
-                    this.loading = true;
-                    try {
-                        const response = await fetch('/api/scrape');
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            this.products = data.products;
-                            this.lastUpdate = data.timestamp;
-                            this.showMessage('Products scraped successfully!', 'success');
-                        } else {
-                            this.showMessage('Failed to scrape products: ' + data.error, 'error');
-                        }
-                    } catch (error) {
-                        this.showMessage('Error: ' + error.message, 'error');
-                    }
-                    this.loading = false;
-                },
+                // Remove manual scrape to keep UI minimal
 
                 async addSubscription() {
                     try {
@@ -390,42 +293,9 @@
                     }
                 },
 
-                async sendTestEmail() {
-                    this.loading = true;
-                    try {
-                        const response = await fetch('/api/send-test-email');
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            this.lastEmail = data.timestamp;
-                            this.showMessage('Test email sent successfully!', 'success');
-                        } else {
-                            this.showMessage('Failed to send email: ' + data.error, 'error');
-                        }
-                    } catch (error) {
-                        this.showMessage('Error: ' + error.message, 'error');
-                    }
-                    this.loading = false;
-                },
+                // Remove manual send to keep UI minimal
 
-                async toggleScheduler() {
-                    this.loading = true;
-                    try {
-                        const endpoint = this.isRunning ? '/api/stop-scheduler' : '/api/start-scheduler';
-                        const response = await fetch(endpoint);
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            this.isRunning = data.is_running;
-                            this.showMessage(data.message, 'success');
-                        } else {
-                            this.showMessage('Failed to toggle scheduler: ' + data.error, 'error');
-                        }
-                    } catch (error) {
-                        this.showMessage('Error: ' + error.message, 'error');
-                    }
-                    this.loading = false;
-                },
+                // Remove scheduler toggles in minimal UI
 
                 showMessage(text, type = 'success') {
                     this.message = text;

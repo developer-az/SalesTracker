@@ -19,6 +19,7 @@ import subscriptions_store
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
+CRON_TOKEN = os.getenv('CRON_TOKEN')
 
 # Global state for tracking
 class WebAppState:
@@ -108,6 +109,20 @@ def api_send_test_email():
             'success': False,
             'error': str(e)
         }), 500
+
+@app.route('/api/cron/send', methods=['POST', 'GET'])
+def api_cron_send():
+    """Secure endpoint for external cron (e.g., GitHub Actions) to trigger daily emails."""
+    try:
+        provided = request.headers.get('X-CRON-TOKEN') or request.args.get('token') or ''
+        if not CRON_TOKEN or provided != CRON_TOKEN:
+            return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+
+        main_improved.send_personalized_emails()
+        app_state.last_email_sent = datetime.now().isoformat()
+        return jsonify({'success': True, 'timestamp': app_state.last_email_sent})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/start-scheduler')
 def api_start_scheduler():

@@ -14,5 +14,7 @@ services:
         sync: false
       - key: EMAIL_PASSWORD
         sync: false
+      - key: CRON_TOKEN
+        sync: false
 
 

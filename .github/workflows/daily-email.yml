@@ -1,0 +1,17 @@
+name: Daily Personalized Emails
+
+on:
+  schedule:
+    - cron: '0 21 * * *' # 9 PM UTC; adjust as needed
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call secure cron endpoint
+        run: |
+          curl -s -X POST \
+            -H "X-CRON-TOKEN: ${{ secrets.CRON_TOKEN }}" \
+            "${{ secrets.APP_URL }}/api/cron/send" || exit 1
+
