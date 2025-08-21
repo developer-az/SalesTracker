@@ -1,110 +1,71 @@
 # Sale Tracker – Email Notifier
 
-A simple Python script that scrapes product prices from Lululemon and Nike, then sends combined daily email alerts to one or more recipients.
+A robust Python web app that scrapes product prices from Lululemon and Nike and emails personalized daily updates. Deployed on Render with a secure GitHub Actions cron.
 
-This project is packaged using `py2app` to create a standalone macOS `.app` file that runs the script daily.
+## 🚀 Features
 
----
+- Minimal web UI: enter your email and product URLs
+- Personalized daily email (9 PM UTC by default)
+- Secure cron endpoint protected by `CRON_TOKEN`
+- Tests, logging, and error handling
 
-## Features
+## 📋 Prerequisites
 
-* Scrapes product names and prices from Lululemon and Nike
-* Sends email alerts to a list of recipients once per day at 9 PM
-* Formats a combined email with prices and product links
-* Easily buildable into a standalone `.app` using `py2app` on macOS
+- Python 3.8+
+- Gmail App Password for sending emails
 
----
-
-## Prerequisites
-
-* Python 3.8 or higher
-* macOS (for building `.app` with `py2app`)
-* Gmail account (App Password required for sending emails)
-* Internet connection to access product pages
-
----
-
-## Setup Instructions
-
-### 1. Clone the Repository
+## 🛠️ Install (dev)
 
 ```bash
-git clone <your-repo-url>
-cd SaleTracker
+pip3 install --break-system-packages -r requirements.txt
 ```
 
-### 2. Create and Activate a Virtual Environment
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-If not already included, install `py2app` manually:
-
-```bash
-pip install py2app
-```
-
-### 4. Create a `.env` File
-
-Create a `.env` file in the project root with the following variables:
-
+Create `.env` (local dev only):
 ```env
 SENDER_EMAIL=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
-RECIPIENT_EMAIL=recipient1@example.com
-RECIPIENT_EMAIL2=recipient2@example.com
 ```
 
-Note: For Gmail, you must enable 2-Step Verification and generate an App Password under Google Account > Security > App Passwords.
+## 🎯 Usage (Web)
 
----
+1) Enter Your Email → Save Email
+2) Enter Product URL (Lululemon/Nike) → Add Product
+3) You’ll receive a personalized email daily at 21:00 UTC
 
-## Running the Script (Dev Mode)
+Force-send once:
+```bash
+curl -s -X POST -H "X-CRON-TOKEN: <TOKEN>" "https://<your-app-url>/api/cron/send"
+```
 
-To test the email script directly:
+## ☁️ Deploy (Render + GitHub Actions)
+
+- Web service start: `bash -lc "gunicorn -b 0.0.0.0:$PORT web_app:app & python -c 'import main_improved as m; m.run_scheduler()'"`
+- Render env: `SENDER_EMAIL`, `EMAIL_PASSWORD`, `FLASK_ENV=production`, `CRON_TOKEN` (same value as below)
+- GitHub Actions secrets: `APP_URL`, `CRON_TOKEN`
+
+Daily workflow: `.github/workflows/daily-email.yml` (runs at 21:00 UTC)
+
+## 🧪 Tests
 
 ```bash
-python3 send_email.py
+python3 test_sale_tracker.py
+python3 test_web_app.py
 ```
 
-This will begin checking prices and emailing once per day at 9:00 PM.
-
-To stop it, press `Ctrl + C`.
-
----
-
-## Building a macOS App
-
-Use `py2app` to package the script into a `.app` file.
-
-### 1. Build the App
-
-```bash
-python3 setup.py py2app
-```
-
-### 2. Locate the Built App
-
-After building, the `.app` will be located in the `dist/` directory:
+## 🏗️ Structure
 
 ```
-dist/send_email.app
+SaleTracker/
+├── web_app.py          # Flask web server + API
+├── main_improved.py    # Email + scraping logic
+├── templates/dashboard.html
+├── recipients_store.py
+├── subscriptions_store.py
+├── .github/workflows/daily-email.yml
+└── README.md
 ```
 
-You can move this to `/Applications` or run it directly. It will run in the background and send emails daily.
+## 🔐 Notes
 
----
-
-## Security
-
-* Avoid committing your `.env` file to version control.
-* Use App Passwords instead of your main Gmail password.
-* Do not hardcode credentials in the script.
+- Set the same `CRON_TOKEN` on Render and GitHub Actions
+- Use a long random token in production (not `1`)
