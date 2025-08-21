@@ -1,8 +1,9 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from urllib.parse import urlparse
+import re
 
 
 SUBSCRIPTIONS_FILE = os.path.join(os.path.abspath("."), "subscriptions.json")
@@ -19,7 +20,7 @@ def _read_store() -> Dict[str, Any]:
 
 
 def _write_store(store: Dict[str, Any]) -> None:
-    store["last_updated"] = datetime.utcnow().isoformat()
+    store["last_updated"] = datetime.now(timezone.utc).isoformat()
     with open(SUBSCRIPTIONS_FILE, "w", encoding="utf-8") as f:
         json.dump(store, f, indent=2)
 
@@ -44,6 +45,11 @@ def add_product(email: str, product_url: str) -> Dict[str, Any]:
     if not email_key or not product_url:
         return {"success": False, "error": "Email and URL are required"}
 
+    # Basic URL sanity check
+    parsed = urlparse(product_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return {"success": False, "error": "Invalid URL"}
+
     company = _detect_company(product_url)
     if not company:
         return {"success": False, "error": "Unsupported product URL (only Lululemon/Nike supported)"}
@@ -58,7 +64,7 @@ def add_product(email: str, product_url: str) -> Dict[str, Any]:
     subs.append({
         "url": product_url,
         "company": company,
-        "added_at": datetime.utcnow().isoformat()
+        "added_at": datetime.now(timezone.utc).isoformat()
     })
     _write_store(store)
     return {"success": True, "message": "Product added"}

@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 from typing import List, Dict, Any
 
@@ -19,7 +19,7 @@ def _read_store() -> Dict[str, Any]:
 
 
 def _write_store(store: Dict[str, Any]) -> None:
-    store["last_updated"] = datetime.utcnow().isoformat()
+    store["last_updated"] = datetime.now(timezone.utc).isoformat()
     with open(RECIPIENTS_FILE, "w", encoding="utf-8") as f:
         json.dump(store, f, indent=2)
 
@@ -55,7 +55,7 @@ def add_recipient(email: str) -> Dict[str, Any]:
 
     store.setdefault("recipients", []).append({
         "email": email_normalized,
-        "added_at": datetime.utcnow().isoformat()
+        "added_at": datetime.now(timezone.utc).isoformat()
     })
     _write_store(store)
     return {"success": True, "message": "Email added"}
