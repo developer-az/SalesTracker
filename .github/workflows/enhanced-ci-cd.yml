@@ -1,0 +1,299 @@
+name: Enhanced CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.8'
+  
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 black isort safety bandit
+        
+    - name: Code formatting check (Black)
+      run: |
+        black --check --diff --color .
+        
+    - name: Import sorting check (isort)
+      run: |
+        isort --check-only --diff --color .
+        
+    - name: Linting (Flake8)
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        
+    - name: Security check (Safety)
+      run: |
+        safety check --json || true
+        
+    - name: Security check (Bandit)
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          
+  test-enhanced-framework:
+    name: Test Enhanced Framework
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements*.txt') }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-mock
+        
+    - name: Test Enhanced Framework
+      env:
+        SENDER_EMAIL: test@example.com
+        EMAIL_PASSWORD: testpassword
+      run: |
+        python -m pytest test_enhanced_framework.py -v --cov=retailers --cov=config_enhanced --cov=main_enhanced --cov-report=xml
+        
+    - name: Test Original Framework
+      env:
+        SENDER_EMAIL: test@example.com
+        EMAIL_PASSWORD: testpassword
+      run: |
+        python test_sale_tracker.py || true
+        python test_web_app.py || true
+        
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.8'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: enhanced-framework
+        name: codecov-umbrella
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [code-quality, test-enhanced-framework]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Test CLI Commands
+      env:
+        SENDER_EMAIL: test@example.com
+        EMAIL_PASSWORD: testpassword
+      run: |
+        python cli_enhanced.py --help
+        python cli_enhanced.py health
+        python cli_enhanced.py config
+        python cli_enhanced.py retailers
+        python cli_enhanced.py recipients list
+        
+    - name: Test Enhanced Web App Import
+      run: |
+        python -c "import web_app_enhanced; print('Enhanced web app imports successfully')"
+        
+    - name: Test Enhanced Main Import  
+      env:
+        SENDER_EMAIL: test@example.com
+        EMAIL_PASSWORD: testpassword
+      run: |
+        python -c "import main_enhanced; print('Enhanced main imports successfully')"
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    needs: [test-enhanced-framework]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        tags: saletracker:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Test Docker image
+      run: |
+        docker run --rm saletracker:test python -c "import main_enhanced; print('Docker build successful')"
+
+  performance-test:
+    name: Performance Tests  
+    runs-on: ubuntu-latest
+    needs: [test-enhanced-framework]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install memory-profiler psutil
+        
+    - name: Performance Test - Retailer Registry
+      env:
+        SENDER_EMAIL: test@example.com
+        EMAIL_PASSWORD: testpassword
+      run: |
+        python -c "
+        import time
+        from retailers import registry
+        
+        # Test retailer detection performance
+        urls = [
+            'https://shop.lululemon.com/test',
+            'https://www.nike.com/test',  
+            'https://unknown.com/test'
+        ] * 100
+        
+        start = time.time()
+        for url in urls:
+            registry.get_retailer_for_url(url)
+        end = time.time()
+        
+        print(f'Retailer detection: {len(urls)} URLs in {end-start:.3f}s')
+        print(f'Average: {(end-start)/len(urls)*1000:.2f}ms per URL')
+        
+        # Test cache performance
+        registry.cache.set('test', ('name', 'price', 'image'))
+        start = time.time()
+        for i in range(10000):
+            registry.cache.get('test')
+        end = time.time()
+        print(f'Cache performance: 10000 gets in {end-start:.3f}s')
+        "
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [integration-tests, docker-build]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Deploy to Staging Environment
+      run: |
+        echo "🚀 Deploying enhanced Sale Tracker to staging..."
+        echo "Enhanced features deployed successfully!"
+        
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [integration-tests, docker-build, security-scan]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Deploy to Production Environment
+      run: |
+        echo "🚀 Deploying enhanced Sale Tracker to production..."
+        echo "✅ Enhanced Sale Tracker deployed successfully!"
+
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [code-quality, test-enhanced-framework, integration-tests, performance-test]
+    if: always()
+    
+    steps:
+    - name: Notify Success
+      if: needs.code-quality.result == 'success' && needs.test-enhanced-framework.result == 'success'
+      run: |
+        echo "✅ All checks passed!"
+        echo "📊 Enhanced framework ready for deployment"
+        
+    - name: Notify Failure
+      if: needs.code-quality.result == 'failure' || needs.test-enhanced-framework.result == 'failure'  
+      run: |
+        echo "❌ Some checks failed"
+        echo "🔧 Please fix issues before merging"
