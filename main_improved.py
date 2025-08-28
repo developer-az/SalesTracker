@@ -1,17 +1,19 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import os
-from dotenv import load_dotenv
-import schedule
-import time
-import requests
-from bs4 import BeautifulSoup
 import json
-import sys
 import logging
+import os
+import smtplib
+import sys
+import time
 from datetime import datetime
-from typing import List, Tuple, Optional
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import List, Optional, Tuple
+
+import requests
+import schedule
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+
 import config
 import recipients_store
 import subscriptions_store
@@ -19,30 +21,28 @@ import subscriptions_store
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('sale_tracker.log'),
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("sale_tracker.log"), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
 
+
 def get_email_credentials() -> Tuple[str, str, List[str]]:
     """Get email credentials from environment variables with fallbacks."""
     sender_email = os.getenv("SENDER_EMAIL")
     sender_password = os.getenv("EMAIL_PASSWORD")
-    
+
     # Determine recipients from recipients_store first; fall back to env vars
     dynamic_recipients = recipients_store.load_recipients()
     recipient_email = os.getenv("RECIPIENT_EMAIL")
     recipient_email2 = os.getenv("RECIPIENT_EMAIL2")
-    
+
     if not sender_email or not sender_password:
         raise ValueError("SENDER_EMAIL and EMAIL_PASSWORD must be set in .env file")
-    
+
     # Build recipient list with precedence: dynamic store > env vars
     recipient_emails: List[str] = []
     if dynamic_recipients:
@@ -53,33 +53,30 @@ def get_email_credentials() -> Tuple[str, str, List[str]]:
         recipient_emails = [recipient_email]
         if recipient_email2:
             recipient_emails.append(recipient_email2)
-    
+
     return sender_email, sender_password, recipient_emails
+
 
 def scrape_lululemon(product_link: str) -> Tuple[str, str, str]:
     """Scrape product information from Lululemon with error handling."""
     try:
         headers = {"User-Agent": config.SCRAPING_SETTINGS["user_agent"]}
-        response = requests.get(
-            product_link, 
-            headers=headers, 
-            timeout=config.SCRAPING_SETTINGS["timeout"]
-        )
+        response = requests.get(product_link, headers=headers, timeout=config.SCRAPING_SETTINGS["timeout"])
         response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        name_element = soup.find("meta", attrs={'property': 'og:title'})
-        price_element = soup.find('span', class_='price') 
-        image_element = soup.find('meta', property='og:image')
+
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        name_element = soup.find("meta", attrs={"property": "og:title"})
+        price_element = soup.find("span", class_="price")
+        image_element = soup.find("meta", property="og:image")
 
         name = name_element.get("content") if name_element else "Product name not found"
         price = price_element.get_text(strip=True) if price_element else "Price not found"
-        image = image_element['content'] if image_element else ''
+        image = image_element["content"] if image_element else ""
 
         logger.info(f"Successfully scraped Lululemon product: {name} - {price}")
         return name, price, image
-        
+
     except requests.RequestException as e:
         logger.error(f"Failed to scrape Lululemon product: {e}")
         return "Product name not found", "Price not found", ""
@@ -87,17 +84,14 @@ def scrape_lululemon(product_link: str) -> Tuple[str, str, str]:
         logger.error(f"Unexpected error scraping Lululemon product: {e}")
         return "Product name not found", "Price not found", ""
 
+
 def scrape_nike(product_link: str) -> Tuple[str, str, str]:
     """Scrape product information from Nike with error handling."""
     try:
         headers = {"User-Agent": config.SCRAPING_SETTINGS["user_agent"]}
-        response = requests.get(
-            product_link, 
-            headers=headers, 
-            timeout=config.SCRAPING_SETTINGS["timeout"]
-        )
+        response = requests.get(product_link, headers=headers, timeout=config.SCRAPING_SETTINGS["timeout"])
         response.raise_for_status()
-        
+
         soup = BeautifulSoup(response.text, "html.parser")
 
         # Find and parse the JSON-LD product data
@@ -105,19 +99,19 @@ def scrape_nike(product_link: str) -> Tuple[str, str, str]:
         if not json_ld:
             logger.warning("No JSON-LD data found for Nike product")
             return "Product name not found", "Price not found", ""
-            
+
         data = json.loads(json_ld.string)
-        image_element = soup.find('meta', property='og:image')
+        image_element = soup.find("meta", property="og:image")
 
         # Extract name and price
         name = data.get("name", "Product name not found")
         price_data = data.get("offers", {})
         price = f"${price_data.get('lowPrice', 'N/A')}USD" if price_data else "Price not found"
-        image = image_element['content'] if image_element else ''
+        image = image_element["content"] if image_element else ""
 
         logger.info(f"Successfully scraped Nike product: {name} - {price}")
         return name, price, image
-        
+
     except requests.RequestException as e:
         logger.error(f"Failed to scrape Nike product: {e}")
         return "Product name not found", "Price not found", ""
@@ -128,11 +122,12 @@ def scrape_nike(product_link: str) -> Tuple[str, str, str]:
         logger.error(f"Unexpected error scraping Nike product: {e}")
         return "Product name not found", "Price not found", ""
 
+
 def send_combined_email() -> None:
     """Send combined email with all product information (global list)."""
     try:
         sender_email, sender_password, recipient_emails = get_email_credentials()
-        
+
         all_products_info = []
         prices_for_subject = []
 
@@ -146,7 +141,7 @@ def send_combined_email() -> None:
                 else:
                     logger.warning(f"Unknown company: {company}")
                     continue
-                    
+
                 all_products_info.append((name, price, image, link, company))
                 # Clean price for subject line
                 clean_price = price.replace("USD", "").replace("$", "").strip()
@@ -158,18 +153,15 @@ def send_combined_email() -> None:
 
         # Compose email
         message = MIMEMultipart()
-        message['From'] = sender_email
-        message['To'] = ", ".join(recipient_emails)
+        message["From"] = sender_email
+        message["To"] = ", ".join(recipient_emails)
 
         # Create dynamic subject line
         subject_prices = ", ".join(prices_for_subject)
-        message['Subject'] = f"{subject_prices} – Your Tracked Products ({datetime.now().strftime('%Y-%m-%d')})"
+        message["Subject"] = f"{subject_prices} – Your Tracked Products ({datetime.now().strftime('%Y-%m-%d')})"
 
         # Build email body
-        html_lines = [
-            "<html><body>",
-            f"<h2>Here are your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>"
-        ]
+        html_lines = ["<html><body>", f"<h2>Here are your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>"]
 
         for name, price, image, link, company in all_products_info:
             card = f"""
@@ -196,20 +188,20 @@ def send_combined_email() -> None:
 
         html_lines.append("</body></html>")
         html_body = "\n".join(html_lines)
-        message.attach(MIMEText(html_body, 'html'))
+        message.attach(MIMEText(html_body, "html"))
 
         # Send email
         server = smtplib.SMTP(config.EMAIL_SETTINGS["smtp_server"], config.EMAIL_SETTINGS["smtp_port"])
         server.starttls()
         server.login(sender_email, sender_password)
-        
+
         for recipient in recipient_emails:
             server.sendmail(sender_email, recipient, message.as_string())
             logger.info(f"Email sent successfully to {recipient}")
-            
+
         server.quit()
         logger.info("Combined email sent successfully to all recipients")
-        
+
     except Exception as e:
         logger.error(f"Failed to send combined email: {e}")
 
@@ -256,15 +248,12 @@ def send_personalized_emails() -> None:
 
             # Compose email
             message = MIMEMultipart()
-            message['From'] = sender_email
-            message['To'] = recipient
+            message["From"] = sender_email
+            message["To"] = recipient
             subject_prices_str = ", ".join(subject_prices)
-            message['Subject'] = f"{subject_prices_str} – Your Tracked Products ({datetime.now().strftime('%Y-%m-%d')})"
+            message["Subject"] = f"{subject_prices_str} – Your Tracked Products ({datetime.now().strftime('%Y-%m-%d')})"
 
-            html_lines = [
-                "<html><body>",
-                f"<h2>Your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>"
-            ]
+            html_lines = ["<html><body>", f"<h2>Your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>"]
             for name, price, image, link, company in collected:
                 card = f"""
                 <div style=\"width: 100%; text-align: center;\">
@@ -288,7 +277,7 @@ def send_personalized_emails() -> None:
                 """
                 html_lines.append(card)
             html_lines.append("</body></html>")
-            message.attach(MIMEText("\n".join(html_lines), 'html'))
+            message.attach(MIMEText("\n".join(html_lines), "html"))
 
             server.sendmail(sender_email, recipient, message.as_string())
             logger.info(f"Personalized email sent to {recipient}")
@@ -297,25 +286,27 @@ def send_personalized_emails() -> None:
     except Exception as e:
         logger.error(f"Failed to send personalized emails: {e}")
 
+
 def resource_path(relative_path: str) -> str:
     """Get absolute path to resource, works for dev and for PyInstaller."""
-    if getattr(sys, 'frozen', False):  # Bundled with py2app
+    if getattr(sys, "frozen", False):  # Bundled with py2app
         base_path = os.path.dirname(sys.executable)
     else:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+
 def run_scheduler() -> None:
     """Run the scheduler to send emails at the specified time."""
     logger.info("Starting Sale Tracker scheduler")
     logger.info(f"Emails will be sent daily at {config.EMAIL_SETTINGS['schedule_time']}")
-    
+
     # Use personalized emails when available
     schedule.every().day.at(config.EMAIL_SETTINGS["schedule_time"]).do(send_personalized_emails)
-    
+
     # Send immediately for testing (uncomment the next line to test)
     # send_combined_email()
-    
+
     while True:
         try:
             schedule.run_pending()
@@ -327,7 +318,8 @@ def run_scheduler() -> None:
             logger.error(f"Scheduler error: {e}")
             time.sleep(60)  # Wait before retrying
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     try:
         run_scheduler()
     except Exception as e:
