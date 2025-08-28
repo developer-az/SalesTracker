@@ -8,13 +8,27 @@ A robust Python web app that scrapes product prices from Lululemon and Nike and 
 - Personalized daily email (9 PM UTC by default)
 - Secure cron endpoint protected by `CRON_TOKEN`
 - Tests, logging, and error handling
+- **Comprehensive health checks and diagnostics**
+- **Automated deployment with GitHub Actions**
 
 ## 📋 Prerequisites
 
 - Python 3.8+
 - Gmail App Password for sending emails
+- Hosting service account (Render recommended)
 
-## 🛠️ Install (dev)
+## ⚡ Quick Start
+
+📖 **For a complete setup guide, see [SETUP_GUIDE.md](SETUP_GUIDE.md)**
+
+1. Deploy to Render (or similar service)
+2. Set environment variables (`SENDER_EMAIL`, `EMAIL_PASSWORD`, `CRON_TOKEN`)  
+3. Configure GitHub Actions secrets (`APP_URL`, `CRON_TOKEN`)
+4. Test with health check: `/api/health`
+
+❓ **Do I need the app "open"?** No! Once deployed, it runs automatically 24/7.
+
+## 🛠️ Local Development
 
 ```bash
 pip3 install --break-system-packages -r requirements.txt
@@ -39,11 +53,20 @@ curl -s -X POST -H "X-CRON-TOKEN: <TOKEN>" "https://<your-app-url>/api/cron/send
 
 ## ☁️ Deploy (Render + GitHub Actions)
 
-- Web service start: `bash -lc "gunicorn -b 0.0.0.0:$PORT web_app:app & python -c 'import main_improved as m; m.run_scheduler()'"`
-- Render env: `SENDER_EMAIL`, `EMAIL_PASSWORD`, `FLASK_ENV=production`, `CRON_TOKEN` (same value as below)
-- GitHub Actions secrets: `APP_URL`, `CRON_TOKEN`
+**📖 See [SETUP_GUIDE.md](SETUP_GUIDE.md) for complete deployment instructions**
+
+Quick summary:
+- **Render env**: `SENDER_EMAIL`, `EMAIL_PASSWORD`, `FLASK_ENV=production`, `CRON_TOKEN`
+- **GitHub Actions secrets**: `APP_URL`, `CRON_TOKEN` (same value as Render)
+- **Start command**: `gunicorn -b 0.0.0.0:$PORT web_app:app`
 
 Daily workflow: `.github/workflows/daily-email.yml` (runs at 21:00 UTC)
+
+### Health Check
+Once deployed, verify setup:
+```bash
+curl https://your-app-url/api/health
+```
 
 ## 🧪 Tests
 

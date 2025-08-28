@@ -83,6 +83,31 @@ class WebAppTestCase(unittest.TestCase):
         resp = self.client.post("/api/cron/send", headers={"X-CRON-TOKEN": "wrong"})
         self.assertEqual(resp.status_code, 401)
         self.assertFalse(resp.json["success"]) 
+        
+    def test_health_check(self):
+        resp = self.client.get("/api/health")
+        self.assertIn(resp.status_code, [200, 503])  # 200 if healthy, 503 if issues
+        self.assertIn("overall_status", resp.json)
+        self.assertIn("checks", resp.json)
+        self.assertIn("timestamp", resp.json)
+        
+        # Check required health checks are present
+        checks = resp.json["checks"]
+        self.assertIn("email_credentials", checks)
+        self.assertIn("recipients", checks)
+        self.assertIn("github_actions", checks)
+        
+    def test_test_email_endpoint(self):
+        # Test without email
+        resp = self.client.post("/api/test-email", json={})
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(resp.json["success"])
+        
+        # Test with invalid configuration (no email credentials set)
+        # This will fail in test environment since credentials aren't set
+        resp = self.client.post("/api/test-email", json={"email": "test@example.com"})
+        self.assertIn(resp.status_code, [400, 500])  # Could be config error (400) or network error (500)
+        self.assertFalse(resp.json["success"]) 
 
 
 if __name__ == "__main__":
