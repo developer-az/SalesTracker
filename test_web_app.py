@@ -1,8 +1,8 @@
-import os
-import tempfile
-import shutil
-import json
 import importlib
+import json
+import os
+import shutil
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -17,6 +17,7 @@ class WebAppTestCase(unittest.TestCase):
         # Inject paths
         import recipients_store
         import subscriptions_store
+
         recipients_store.RECIPIENTS_FILE = self.recipients_path
         subscriptions_store.SUBSCRIPTIONS_FILE = self.subscriptions_path
 
@@ -24,6 +25,7 @@ class WebAppTestCase(unittest.TestCase):
         os.environ["CRON_TOKEN"] = "testtoken"
         global web_app
         import web_app as _web_app
+
         importlib.reload(_web_app)
         web_app = _web_app
         web_app.app.config["TESTING"] = True
@@ -36,22 +38,22 @@ class WebAppTestCase(unittest.TestCase):
         # Initially empty
         resp = self.client.get("/api/recipients")
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json["success"]) 
+        self.assertTrue(resp.json["success"])
         self.assertEqual(resp.json["recipients"], [])
 
         # Add
         resp = self.client.post("/api/recipients", json={"email": "user@example.com"})
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json["success"]) 
+        self.assertTrue(resp.json["success"])
 
         # List
         resp = self.client.get("/api/recipients")
-        self.assertIn("user@example.com", resp.json["recipients"]) 
+        self.assertIn("user@example.com", resp.json["recipients"])
 
         # Remove
         resp = self.client.delete("/api/recipients", json={"email": "user@example.com"})
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json["success"]) 
+        self.assertTrue(resp.json["success"])
 
     def test_subscriptions_flow(self):
         email = "user@example.com"
@@ -60,32 +62,30 @@ class WebAppTestCase(unittest.TestCase):
         # Add product
         resp = self.client.post("/api/subscriptions", json={"email": email, "url": url})
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json["success"]) 
+        self.assertTrue(resp.json["success"])
 
         # List for user
         resp = self.client.get(f"/api/subscriptions?email={email}")
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json["success"]) 
+        self.assertTrue(resp.json["success"])
         self.assertEqual(len(resp.json.get("products", [])), 1)
 
         # Remove
         resp = self.client.delete("/api/subscriptions", json={"email": email, "url": url})
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json["success"]) 
+        self.assertTrue(resp.json["success"])
 
     @patch("web_app.main_improved.send_personalized_emails", return_value=None)
     def test_cron_send_authorized(self, _mock_send):
         resp = self.client.post("/api/cron/send", headers={"X-CRON-TOKEN": "testtoken"})
         self.assertEqual(resp.status_code, 200)
-        self.assertTrue(resp.json["success"]) 
+        self.assertTrue(resp.json["success"])
 
     def test_cron_send_unauthorized(self):
         resp = self.client.post("/api/cron/send", headers={"X-CRON-TOKEN": "wrong"})
         self.assertEqual(resp.status_code, 401)
-        self.assertFalse(resp.json["success"]) 
+        self.assertFalse(resp.json["success"])
 
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-
-

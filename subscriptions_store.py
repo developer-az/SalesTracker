@@ -1,10 +1,9 @@
-import os
 import json
-from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
-from urllib.parse import urlparse
+import os
 import re
-
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 SUBSCRIPTIONS_FILE = os.path.join(os.path.abspath("."), "subscriptions.json")
 
@@ -61,11 +60,7 @@ def add_product(email: str, product_url: str) -> Dict[str, Any]:
     if any(entry.get("url") == product_url for entry in subs):
         return {"success": True, "message": "Product already added"}
 
-    subs.append({
-        "url": product_url,
-        "company": company,
-        "added_at": datetime.now(timezone.utc).isoformat()
-    })
+    subs.append({"url": product_url, "company": company, "added_at": datetime.now(timezone.utc).isoformat()})
     _write_store(store)
     return {"success": True, "message": "Product added"}
 
@@ -87,5 +82,3 @@ def remove_product(email: str, product_url: str) -> Dict[str, Any]:
 def list_all_subscriptions() -> Dict[str, List[Dict[str, str]]]:
     store = _read_store()
     return store.get("subscriptions", {})
-
-

@@ -1,9 +1,8 @@
-import os
 import json
-from datetime import datetime, timezone
+import os
 import re
-from typing import List, Dict, Any
-
+from datetime import datetime, timezone
+from typing import Any, Dict, List
 
 RECIPIENTS_FILE = os.path.join(os.path.abspath("."), "recipients.json")
 
@@ -53,10 +52,7 @@ def add_recipient(email: str) -> Dict[str, Any]:
     if email_normalized in existing:
         return {"success": True, "message": "Email already subscribed"}
 
-    store.setdefault("recipients", []).append({
-        "email": email_normalized,
-        "added_at": datetime.now(timezone.utc).isoformat()
-    })
+    store.setdefault("recipients", []).append({"email": email_normalized, "added_at": datetime.now(timezone.utc).isoformat()})
     _write_store(store)
     return {"success": True, "message": "Email added"}
 
@@ -71,5 +67,3 @@ def remove_recipient(email: str) -> Dict[str, Any]:
         return {"success": False, "error": "Email not found"}
     _write_store(store)
     return {"success": True, "message": "Email removed"}
-
-
