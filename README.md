@@ -1,15 +1,17 @@
 # Sale Tracker – Email Notifier
 
-A robust Python web app that scrapes product prices from Lululemon and Nike and emails personalized daily updates. Deployed on Render with a secure GitHub Actions cron.
+A small Python web app that reads live product prices from storefronts, shows them in a simple dashboard, and emails a daily digest. Deployed on Render with a secure GitHub Actions cron.
 
 ## 🚀 Features
 
-- Minimal web UI: enter your email and product URLs
+- Two-field setup: email + product URL, then live prices
+- Works with Nike, Lululemon and most stores that publish JSON-LD / Open Graph product data
+- Correct price parsing (handles Nike `ProductGroup` variants and sale prices)
+- Per-product status: live price, price missing, or retailer blocked
 - Personalized daily email (9 PM UTC by default)
 - Secure cron endpoint protected by `CRON_TOKEN`
 - Tests, logging, and error handling
-- **Comprehensive health checks and diagnostics**
-- **Automated deployment with GitHub Actions**
+- Health checks and diagnostics at `/api/health`
 
 ## 📋 Prerequisites
 
@@ -42,14 +44,29 @@ EMAIL_PASSWORD=your-app-password
 
 ## 🎯 Usage (Web)
 
-1) Enter Your Email → Save Email
-2) Enter Product URL (Lululemon/Nike) → Add Product
-3) You’ll receive a personalized email daily at 21:00 UTC
+1. Enter your email and a product URL → **Start tracking**
+2. The dashboard shows the product's current price and image
+3. Add more links any time, refresh prices, or remove products
+4. You'll receive a personalized email daily at 21:00 UTC
 
 Force-send once:
 ```bash
 curl -s -X POST -H "X-CRON-TOKEN: <TOKEN>" "https://<your-app-url>/api/cron/send"
 ```
+
+### How scraping works
+
+`scraper.py` fetches the product page and reads structured product data
+(JSON-LD `Product` / `ProductGroup`, microdata, Open Graph, then common price
+markup). It uses `curl_cffi` with a real browser TLS fingerprint first and falls
+back to `requests`. Nothing is hard-coded per retailer, so most stores work.
+
+Some retailers (Lululemon in particular) block datacenter IPs. When that happens
+the product card says **Blocked** and keeps the name from the URL; the daily
+email retries the price. Nike works reliably.
+
+If a site blocks your host, the fix is a residential/rotating proxy in
+`scraper._fetch`.
 
 ## ☁️ Deploy (Render + GitHub Actions)
 
@@ -80,7 +97,8 @@ python3 test_web_app.py
 ```
 SaleTracker/
 ├── web_app.py          # Flask web server + API
-├── main_improved.py    # Email + scraping logic
+├── scraper.py          # Product data fetching and parsing
+├── main_improved.py    # Email digest logic
 ├── templates/dashboard.html
 ├── recipients_store.py
 ├── subscriptions_store.py

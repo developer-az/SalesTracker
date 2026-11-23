@@ -1,120 +1,157 @@
 #!/usr/bin/env python3
 """
 Sale Tracker Web Application
-Modern Flask web interface for the Sale Tracker
+Flask API + dashboard for tracked product prices.
 """
 
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
+from flask import Flask, request, jsonify, render_template
 import os
-import json
 from datetime import datetime
 import threading
-import time
 
-# Import our improved modules
-import main_improved
 import config
+import main_improved
 import recipients_store
 import subscriptions_store
+import scraper
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
 CRON_TOKEN = os.getenv('CRON_TOKEN')
 
-# Global state for tracking
+
 class WebAppState:
     def __init__(self):
         self.last_scrape_results = []
         self.is_running = False
         self.last_email_sent = None
         self.scheduler_thread = None
-        
+
     def update_scrape_results(self, results):
         self.last_scrape_results = results
-        
+
+
 app_state = WebAppState()
+
+
+def _products_for_email(email, force=False):
+    """Return tracked products for an email with live price data."""
+    subscriptions = subscriptions_store.get_products(email)
+    if not subscriptions:
+        return []
+
+    urls = [entry.get("url") for entry in subscriptions if entry.get("url")]
+    scraped = scraper.scrape_many(urls, force=force)
+    by_url = {item["url"]: item for item in scraped}
+
+    products = []
+    for entry in subscriptions:
+        url = entry.get("url")
+        item = dict(by_url.get(url) or {})
+        item.setdefault("url", url)
+        item.setdefault("retailer", (entry.get("company") or "").title())
+        item["company"] = entry.get("company")
+        item["added_at"] = entry.get("added_at")
+        products.append(item)
+    return products
+
 
 @app.route('/')
 def index():
-    """Main dashboard page."""
     scheduler_text = "Scheduled via GitHub Actions" if CRON_TOKEN else None
-    return render_template('dashboard.html', 
-                         products=app_state.last_scrape_results,
-                         is_running=app_state.is_running,
-                         last_email=app_state.last_email_sent,
-                         config=config,
-                         scheduler_text=scheduler_text)
+    return render_template(
+        'dashboard.html',
+        products=[],
+        is_running=app_state.is_running,
+        last_email=app_state.last_email_sent,
+        config=config,
+        scheduler_text=scheduler_text,
+    )
+
+
+@app.route('/api/products')
+def api_products():
+    """Tracked products for one email, with freshly scraped prices."""
+    email = (request.args.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({'success': True, 'products': [], 'timestamp': datetime.now().isoformat()})
+    try:
+        products = _products_for_email(email)
+        app_state.update_scrape_results(products)
+        return jsonify({
+            'success': True,
+            'products': products,
+            'timestamp': datetime.now().isoformat(),
+        })
+    except Exception as exc:
+        app.logger.exception("Failed to load products")
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
+
+@app.route('/api/products/refresh', methods=['POST'])
+def api_products_refresh():
+    """Re-scrape the tracked products for one email (or a single URL)."""
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip().lower()
+    url = (data.get('url') or '').strip()
+
+    if not email and not url:
+        return jsonify({'success': False, 'error': 'Email or URL is required'}), 400
+
+    try:
+        if url and not email:
+            product = scraper.scrape(url, force=True)
+            return jsonify({'success': True, 'product': product})
+        products = _products_for_email(email, force=True)
+        app_state.update_scrape_results(products)
+        return jsonify({
+            'success': True,
+            'products': products,
+            'timestamp': datetime.now().isoformat(),
+        })
+    except Exception as exc:
+        app.logger.exception("Failed to refresh products")
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
 
 @app.route('/api/scrape')
 def api_scrape():
-    """API endpoint to scrape all products."""
+    """Legacy endpoint: scrape the products in config.py."""
     try:
-        results = []
-        
-        for company, links in config.PRODUCT_LINKS.items():
-            for link in links:
-                try:
-                    if company == "lululemon":
-                        name, price, image = main_improved.scrape_lululemon(link)
-                    elif company == "nike":
-                        name, price, image = main_improved.scrape_nike(link)
-                    else:
-                        continue
-                    
-                    results.append({
-                        'company': company,
-                        'name': name,
-                        'price': price,
-                        'image': image,
-                        'link': link,
-                        'timestamp': datetime.now().isoformat(),
-                        'success': name != "Product name not found"
-                    })
-                except Exception as e:
-                    results.append({
-                        'company': company,
-                        'name': f"Error: {str(e)}",
-                        'price': "N/A",
-                        'image': "",
-                        'link': link,
-                        'timestamp': datetime.now().isoformat(),
-                        'success': False
-                    })
-        
+        urls = [link for links in config.PRODUCT_LINKS.values() for link in links]
+        results = scraper.scrape_many(urls)
+        for item in results:
+            item['company'] = item['retailer'].lower()
+            item['link'] = item['url']
+            item['timestamp'] = item.get('fetched_at')
         app_state.update_scrape_results(results)
         return jsonify({
             'success': True,
             'products': results,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
         })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
 
 @app.route('/api/send-test-email')
 def api_send_test_email():
-    """API endpoint to send a test email."""
+    """Send the daily digest right now."""
     try:
-        # Prefer personalized emails if subscriptions exist; else fallback
         main_improved.send_personalized_emails()
         app_state.last_email_sent = datetime.now().isoformat()
         return jsonify({
             'success': True,
-            'message': 'Test email sent successfully',
-            'timestamp': app_state.last_email_sent
+            'message': 'Email sent',
+            'timestamp': app_state.last_email_sent,
         })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
 
 @app.route('/api/cron/send', methods=['POST', 'GET'])
 def api_cron_send():
-    """Secure endpoint for external cron (e.g., GitHub Actions) to trigger daily emails."""
+    """Secure endpoint for external cron (e.g. GitHub Actions)."""
     try:
         provided = request.headers.get('X-CRON-TOKEN') or request.args.get('token') or ''
         if not CRON_TOKEN or provided != CRON_TOKEN:
@@ -122,305 +159,229 @@ def api_cron_send():
             return jsonify({'success': False, 'error': 'Unauthorized'}), 401
 
         app.logger.info("Cron-triggered daily email starting...")
-        
-        # Pre-flight checks
+
         try:
             sender_email, sender_password, recipient_emails = main_improved.get_email_credentials()
             if not recipient_emails:
                 return jsonify({
-                    'success': False, 
+                    'success': False,
                     'error': 'No recipients configured',
-                    'details': 'Add recipients via web interface or set RECIPIENT_EMAIL environment variable'
+                    'details': 'Add recipients via the web interface or set RECIPIENT_EMAIL',
                 }), 400
-                
-        except ValueError as e:
+        except ValueError as exc:
             return jsonify({
                 'success': False,
                 'error': 'Email configuration error',
-                'details': str(e)
+                'details': str(exc),
             }), 400
 
-        # Attempt to send emails
         main_improved.send_personalized_emails()
         app_state.last_email_sent = datetime.now().isoformat()
-        
+
         app.logger.info(f"Daily emails sent successfully to {len(recipient_emails)} recipients")
         return jsonify({
-            'success': True, 
+            'success': True,
             'timestamp': app_state.last_email_sent,
-            'recipients_count': len(recipient_emails)
+            'recipients_count': len(recipient_emails),
         })
-        
-    except Exception as e:
-        app.logger.error(f"Cron email send failed: {e}")
+    except Exception as exc:
+        app.logger.error(f"Cron email send failed: {exc}")
         return jsonify({
-            'success': False, 
+            'success': False,
             'error': 'Email sending failed',
-            'details': str(e)
+            'details': str(exc),
         }), 500
+
 
 @app.route('/api/start-scheduler')
 def api_start_scheduler():
-    """API endpoint to start the scheduler."""
     try:
         if not app_state.is_running:
             def run_scheduler():
                 app_state.is_running = True
                 try:
                     main_improved.run_scheduler()
-                except:
+                except Exception:
                     pass
                 finally:
                     app_state.is_running = False
-            
+
             app_state.scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
             app_state.scheduler_thread.start()
-            
+
         return jsonify({
             'success': True,
             'message': 'Scheduler started',
-            'is_running': app_state.is_running
+            'is_running': app_state.is_running,
         })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
 
 @app.route('/api/stop-scheduler')
 def api_stop_scheduler():
-    """API endpoint to stop the scheduler."""
     try:
         app_state.is_running = False
         return jsonify({
             'success': True,
             'message': 'Scheduler stop requested',
-            'is_running': app_state.is_running
+            'is_running': app_state.is_running,
         })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
 
 @app.route('/api/config')
 def api_config():
-    """API endpoint to get current configuration."""
     return jsonify({
         'product_links': config.PRODUCT_LINKS,
         'email_settings': config.EMAIL_SETTINGS,
         'scraping_settings': config.SCRAPING_SETTINGS,
-        'recipients': recipients_store.load_recipients()
+        'recipients': recipients_store.load_recipients(),
+        'supported_retailers': ['Lululemon', 'Nike', 'any retailer with structured product data'],
     })
+
 
 @app.route('/api/status')
 def api_status():
-    """API endpoint to get application status."""
     return jsonify({
         'is_running': app_state.is_running,
         'last_email_sent': app_state.last_email_sent,
         'products_count': len(app_state.last_scrape_results),
-        'last_scrape': app_state.last_scrape_results[-1]['timestamp'] if app_state.last_scrape_results else None
+        'last_scrape': (
+            app_state.last_scrape_results[-1].get('fetched_at')
+            if app_state.last_scrape_results else None
+        ),
     })
+
 
 @app.route('/api/health')
 def api_health():
-    """Comprehensive health check endpoint for configuration validation."""
-    health_status = {
+    """Health check for deployment monitors."""
+    health = {
         'overall_status': 'healthy',
         'timestamp': datetime.now().isoformat(),
         'checks': {},
         'issues': [],
         'configuration': {},
-        'recommendations': []
+        'recommendations': [],
     }
-    
-    # Check email configuration
-    try:
-        sender_email = os.getenv("SENDER_EMAIL")
-        sender_password = os.getenv("EMAIL_PASSWORD")
-        
-        if sender_email and sender_password:
-            health_status['checks']['email_credentials'] = 'configured'
-            health_status['configuration']['sender_email'] = sender_email
-        else:
-            health_status['checks']['email_credentials'] = 'missing'
-            health_status['issues'].append('Email credentials (SENDER_EMAIL, EMAIL_PASSWORD) not configured')
-            health_status['recommendations'].append('Set SENDER_EMAIL and EMAIL_PASSWORD environment variables')
-            health_status['overall_status'] = 'degraded'
-            
-    except Exception as e:
-        health_status['checks']['email_credentials'] = 'error'
-        health_status['issues'].append(f'Error checking email credentials: {str(e)}')
-    
-    # Check recipients configuration
+
+    sender_email = os.getenv("SENDER_EMAIL")
+    sender_password = os.getenv("EMAIL_PASSWORD")
+    if sender_email and sender_password:
+        health['checks']['email_credentials'] = 'configured'
+        health['configuration']['sender_email'] = sender_email
+    else:
+        health['checks']['email_credentials'] = 'missing'
+        health['issues'].append('Email credentials (SENDER_EMAIL, EMAIL_PASSWORD) not configured')
+        health['recommendations'].append('Set SENDER_EMAIL and EMAIL_PASSWORD environment variables')
+        health['overall_status'] = 'degraded'
+
     try:
         recipients = recipients_store.load_recipients()
-        env_recipients = []
-        
-        # Check environment variable recipients as fallback
-        if os.getenv("RECIPIENT_EMAIL"):
-            env_recipients.append(os.getenv("RECIPIENT_EMAIL"))
-        if os.getenv("RECIPIENT_EMAIL2"):
-            env_recipients.append(os.getenv("RECIPIENT_EMAIL2"))
-            
-        total_recipients = len(recipients) + len(env_recipients)
-        
-        if total_recipients > 0:
-            health_status['checks']['recipients'] = 'configured'
-            health_status['configuration']['recipient_count'] = total_recipients
-            health_status['configuration']['recipients_source'] = 'storage' if recipients else 'environment'
+        env_recipients = [v for v in (os.getenv("RECIPIENT_EMAIL"), os.getenv("RECIPIENT_EMAIL2")) if v]
+        total = len(recipients) + len(env_recipients)
+        if total:
+            health['checks']['recipients'] = 'configured'
+            health['configuration']['recipient_count'] = total
+            health['configuration']['recipients_source'] = 'storage' if recipients else 'environment'
         else:
-            health_status['checks']['recipients'] = 'missing'
-            health_status['issues'].append('No email recipients configured')
-            health_status['recommendations'].append('Add recipients via web interface or set RECIPIENT_EMAIL environment variable')
-            health_status['overall_status'] = 'unhealthy'
-            
-    except Exception as e:
-        health_status['checks']['recipients'] = 'error'
-        health_status['issues'].append(f'Error checking recipients: {str(e)}')
-    
-    # Check GitHub Actions configuration
-    cron_token = os.getenv('CRON_TOKEN')
-    if cron_token:
-        health_status['checks']['github_actions'] = 'configured'
-        health_status['configuration']['cron_token_set'] = True
+            health['checks']['recipients'] = 'missing'
+            health['issues'].append('No email recipients configured')
+            health['recommendations'].append('Add recipients via the web interface or set RECIPIENT_EMAIL')
+            health['overall_status'] = 'unhealthy'
+    except Exception as exc:
+        health['checks']['recipients'] = 'error'
+        health['issues'].append(f'Error checking recipients: {exc}')
+
+    if os.getenv('CRON_TOKEN'):
+        health['checks']['github_actions'] = 'configured'
+        health['configuration']['cron_token_set'] = True
     else:
-        health_status['checks']['github_actions'] = 'missing'
-        health_status['issues'].append('CRON_TOKEN not configured - GitHub Actions cannot trigger emails')
-        health_status['recommendations'].append('Set CRON_TOKEN environment variable and matching GitHub secret')
-        
-    # Check if we can access external sites for scraping
-    try:
-        import requests
-        test_response = requests.get('https://httpbin.org/status/200', timeout=5)
-        if test_response.status_code == 200:
-            health_status['checks']['external_access'] = 'available'
-        else:
-            health_status['checks']['external_access'] = 'limited'
-            health_status['issues'].append('Limited external network access - product scraping may fail')
-    except Exception as e:
-        health_status['checks']['external_access'] = 'unavailable'
-        health_status['issues'].append(f'No external network access: {str(e)}')
-        
-    # Check Flask environment
+        health['checks']['github_actions'] = 'missing'
+        health['issues'].append('CRON_TOKEN not configured - GitHub Actions cannot trigger emails')
+        health['recommendations'].append('Set CRON_TOKEN and a matching GitHub secret')
+
+    health['checks']['scraper'] = 'ready'
+    health['configuration']['browser_client'] = 'available' if scraper.cffi_requests else 'requests only'
+
     flask_env = os.getenv('FLASK_ENV', 'development')
-    health_status['configuration']['flask_environment'] = flask_env
-    
-    if flask_env == 'production':
-        health_status['checks']['environment'] = 'production'
-    else:
-        health_status['checks']['environment'] = 'development'
-        health_status['recommendations'].append('Set FLASK_ENV=production for deployment')
-    
-    # Check log file accessibility
+    health['configuration']['flask_environment'] = flask_env
+    health['checks']['environment'] = 'production' if flask_env == 'production' else 'development'
+
     try:
         with open('sale_tracker.log', 'a'):
-            health_status['checks']['logging'] = 'available'
-    except Exception as e:
-        health_status['checks']['logging'] = 'limited'
-        health_status['issues'].append(f'Cannot write to log file: {str(e)}')
-    
-    # Final status determination
-    if health_status['issues']:
-        if any('missing' in issue.lower() or 'no email recipients' in issue.lower() for issue in health_status['issues']):
-            health_status['overall_status'] = 'unhealthy'
-        else:
-            health_status['overall_status'] = 'degraded'
-    
-    status_code = 200 if health_status['overall_status'] == 'healthy' else 503
-    return jsonify(health_status), status_code
+            health['checks']['logging'] = 'available'
+    except Exception:
+        health['checks']['logging'] = 'limited'
+
+    if health['issues'] and health['overall_status'] == 'healthy':
+        health['overall_status'] = 'degraded'
+
+    status_code = 200 if health['overall_status'] == 'healthy' else 503
+    return jsonify(health), status_code
 
 
 @app.route('/api/test-email', methods=['POST'])
 def api_test_email():
-    """Test endpoint to verify email configuration without sending to all recipients."""
+    """Send a test email without touching the whole digest."""
     try:
-        data = request.get_json() or {}
-        test_email = data.get('email')
-        
-        if not test_email:
-            return jsonify({
-                'success': False,
-                'error': 'Email address required',
-                'details': 'Provide email address in request body: {"email": "test@example.com"}'
-            }), 400
-        
-        # Validate email configuration
-        try:
-            sender_email, sender_password, _ = main_improved.get_email_credentials()
-        except ValueError as e:
-            return jsonify({
-                'success': False,
-                'error': 'Email configuration error',
-                'details': str(e)
-            }), 400
-        
-        # Send test email
         import smtplib
         from email.mime.text import MIMEText
         from email.mime.multipart import MIMEMultipart
-        
+
+        data = request.get_json() or {}
+        test_email = (data.get('email') or '').strip()
+
+        if not recipients_store.validate_email(test_email):
+            return jsonify({
+                'success': False,
+                'error': 'A valid email address is required',
+                'details': 'Send {"email": "test@example.com"}',
+            }), 400
+
+        try:
+            sender_email, sender_password, _ = main_improved.get_email_credentials()
+        except ValueError as exc:
+            return jsonify({
+                'success': False,
+                'error': 'Email configuration error',
+                'details': str(exc),
+            }), 400
+
         message = MIMEMultipart()
         message['From'] = sender_email
         message['To'] = test_email
-        message['Subject'] = f'Sale Tracker Test Email - {datetime.now().strftime("%Y-%m-%d %H:%M")}'
-        
-        body = f"""
-        This is a test email from your Sale Tracker application.
-        
-        Configuration Test Results:
-        - Sender Email: {sender_email}
-        - Timestamp: {datetime.now().isoformat()}
-        - Server: {request.host}
-        
-        If you received this email, your email configuration is working correctly!
-        
-        Next steps:
-        1. Add product URLs via the web interface
-        2. The system will send daily updates at 21:00 UTC
-        3. GitHub Actions will trigger the daily emails automatically
-        """
-        
-        message.attach(MIMEText(body, 'plain'))
-        
-        server = smtplib.SMTP(main_improved.config.EMAIL_SETTINGS["smtp_server"], 
-                             main_improved.config.EMAIL_SETTINGS["smtp_port"])
+        message['Subject'] = f'Sale Tracker test email - {datetime.now().strftime("%Y-%m-%d %H:%M")}'
+        message.attach(MIMEText(
+            "This is a test email from Sale Tracker.\n\n"
+            f"Sender: {sender_email}\nTimestamp: {datetime.now().isoformat()}\n\n"
+            "If you received this, your email configuration works.",
+            'plain',
+        ))
+
+        server = smtplib.SMTP(
+            main_improved.config.EMAIL_SETTINGS["smtp_server"],
+            main_improved.config.EMAIL_SETTINGS["smtp_port"],
+        )
         server.starttls()
         server.login(sender_email, sender_password)
         server.sendmail(sender_email, test_email, message.as_string())
         server.quit()
-        
-        app.logger.info(f"Test email sent successfully to {test_email}")
+
         return jsonify({
             'success': True,
-            'message': 'Test email sent successfully',
+            'message': 'Test email sent',
             'recipient': test_email,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
         })
-        
-    except smtplib.SMTPAuthenticationError as e:
-        app.logger.error(f"SMTP Authentication Error: {e}")
-        return jsonify({
-            'success': False,
-            'error': 'Email authentication failed',
-            'details': 'Check SENDER_EMAIL and EMAIL_PASSWORD. For Gmail, use App Password not regular password.'
-        }), 400
-        
-    except smtplib.SMTPException as e:
-        app.logger.error(f"SMTP Error: {e}")
-        return jsonify({
-            'success': False,
-            'error': 'Email server error',
-            'details': str(e)
-        }), 500
-        
-    except Exception as e:
-        app.logger.error(f"Test email failed: {e}")
+    except Exception as exc:
+        app.logger.error(f"Test email failed: {exc}")
         return jsonify({
             'success': False,
             'error': 'Email test failed',
-            'details': str(e)
+            'details': str(exc),
         }), 500
 
 
@@ -430,7 +391,7 @@ def api_recipients():
         if request.method == 'GET':
             return jsonify({
                 'success': True,
-                'recipients': recipients_store.load_recipients()
+                'recipients': recipients_store.load_recipients(),
             })
 
         data = request.get_json(silent=True) or {}
@@ -447,8 +408,8 @@ def api_recipients():
             return jsonify(result), status
 
         return jsonify({'success': False, 'error': 'Unsupported method'}), 405
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
 
 
 @app.route('/api/subscriptions', methods=['GET', 'POST', 'DELETE'])
@@ -475,18 +436,9 @@ def api_subscriptions():
             return jsonify(result), status
 
         return jsonify({'success': False, 'error': 'Unsupported method'}), 405
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as exc:
+        return jsonify({'success': False, 'error': str(exc)}), 500
+
 
 if __name__ == '__main__':
-    # Initialize with a scrape
-    try:
-        import requests
-        # Quick test to see if we can scrape
-        app.logger.info("Initializing with initial scrape...")
-        with app.app_context():
-            api_scrape()
-    except:
-        app.logger.warning("Initial scrape failed, continuing anyway...")
-    
     app.run(host='0.0.0.0', port=5000, debug=True)

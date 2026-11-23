@@ -11,10 +11,11 @@ import json
 import sys
 import logging
 from datetime import datetime
-from typing import List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional
 import config
 import recipients_store
 import subscriptions_store
+import scraper
 
 # Set up logging
 logging.basicConfig(
@@ -56,246 +57,141 @@ def get_email_credentials() -> Tuple[str, str, List[str]]:
     
     return sender_email, sender_password, recipient_emails
 
+def _scrape(product_link: str) -> Tuple[str, str, str]:
+    """Scrape any supported product URL and return (name, price, image)."""
+    result = scraper.scrape(product_link, force=True)
+    name = result.get("name") or "Product name not found"
+    price = result.get("price_display") or "Price not found"
+    image = result.get("image") or ""
+    if not result.get("success"):
+        logger.warning("Could not read a price for %s: %s", product_link, result.get("error"))
+    return name, price, image
+
+
 def scrape_lululemon(product_link: str) -> Tuple[str, str, str]:
-    """Scrape product information from Lululemon with error handling."""
-    try:
-        headers = {"User-Agent": config.SCRAPING_SETTINGS["user_agent"]}
-        response = requests.get(
-            product_link, 
-            headers=headers, 
-            timeout=config.SCRAPING_SETTINGS["timeout"]
-        )
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        name_element = soup.find("meta", attrs={'property': 'og:title'})
-        price_element = soup.find('span', class_='price') 
-        image_element = soup.find('meta', property='og:image')
+    """Scrape product information from a Lululemon URL."""
+    return _scrape(product_link)
 
-        name = name_element.get("content") if name_element else "Product name not found"
-        price = price_element.get_text(strip=True) if price_element else "Price not found"
-        image = image_element['content'] if image_element else ''
-
-        logger.info(f"Successfully scraped Lululemon product: {name} - {price}")
-        return name, price, image
-        
-    except requests.RequestException as e:
-        logger.error(f"Failed to scrape Lululemon product: {e}")
-        return "Product name not found", "Price not found", ""
-    except Exception as e:
-        logger.error(f"Unexpected error scraping Lululemon product: {e}")
-        return "Product name not found", "Price not found", ""
 
 def scrape_nike(product_link: str) -> Tuple[str, str, str]:
-    """Scrape product information from Nike with error handling."""
-    try:
-        headers = {"User-Agent": config.SCRAPING_SETTINGS["user_agent"]}
-        response = requests.get(
-            product_link, 
-            headers=headers, 
-            timeout=config.SCRAPING_SETTINGS["timeout"]
-        )
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, "html.parser")
+    """Scrape product information from a Nike URL."""
+    return _scrape(product_link)
 
-        # Find and parse the JSON-LD product data
-        json_ld = soup.find("script", type="application/ld+json")
-        if not json_ld:
-            logger.warning("No JSON-LD data found for Nike product")
-            return "Product name not found", "Price not found", ""
-            
-        data = json.loads(json_ld.string)
-        image_element = soup.find('meta', property='og:image')
 
-        # Extract name and price
-        name = data.get("name", "Product name not found")
-        price_data = data.get("offers", {})
-        price = f"${price_data.get('lowPrice', 'N/A')}USD" if price_data else "Price not found"
-        image = image_element['content'] if image_element else ''
+def _collect_products(entries: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+    """Scrape each entry and attach the retailer key used by the email."""
+    products = []
+    for entry in entries:
+        url = entry.get("url")
+        if not url:
+            continue
+        result = scraper.scrape(url, force=True)
+        result["company"] = entry.get("company") or result.get("retailer", "")
+        products.append(result)
+    return products
 
-        logger.info(f"Successfully scraped Nike product: {name} - {price}")
-        return name, price, image
-        
-    except requests.RequestException as e:
-        logger.error(f"Failed to scrape Nike product: {e}")
-        return "Product name not found", "Price not found", ""
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON-LD data for Nike product: {e}")
-        return "Product name not found", "Price not found", ""
-    except Exception as e:
-        logger.error(f"Unexpected error scraping Nike product: {e}")
-        return "Product name not found", "Price not found", ""
+
+def _build_email(sender_email: str, recipients: List[str], products: List[Dict[str, Any]]):
+    """Build the daily digest message."""
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = ", ".join(recipients)
+
+    prices = [p["price_display"] for p in products if p.get("price_display")]
+    subject_prices = ", ".join(prices) if prices else "Your tracked products"
+    message["Subject"] = f"{subject_prices} - Your Tracked Products ({datetime.now().strftime('%Y-%m-%d')})"
+
+    cards = []
+    for product in products:
+        name = product.get("name") or "Product"
+        image = product.get("image") or ""
+        price = product.get("price_display")
+        if price:
+            price_html = f'<p style="font-size: 20px; font-weight: bold; color: #0b3558; margin: 10px 0;">{price}</p>'
+        else:
+            reason = "The store blocked the price check" if product.get("status") == "blocked" else "No price found"
+            price_html = f'<p style="font-size: 14px; color: #476788; margin: 10px 0;">{reason}</p>'
+
+        cards.append(f"""
+        <div style="width: 100%; text-align: center;">
+            <div style="display: inline-block; border: 1px solid #d4e0ed; padding: 20px; margin-bottom: 20px; max-width: 400px; border-radius: 16px;">
+                <a href="{product['url']}" target="_blank" style="text-decoration: none; color: inherit;">
+                    <h3 style="margin: 0 0 10px 0; color: #0b3558;">{name}</h3>
+                    {price_html}
+                    <p style="font-size: 12px; color: #476788; margin: 5px 0; text-transform: uppercase;">{product.get('company', '')}</p>
+                    {f'<img src="{image}" alt="{name}" style="width: 80%; max-width: 300px; height: auto; border-radius: 8px;" />' if image else ''}
+                </a>
+            </div>
+        </div>
+        """)
+
+    html_body = "\n".join([
+        "<html><body>",
+        f"<h2>Your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>",
+        *cards,
+        "</body></html>",
+    ])
+    message.attach(MIMEText(html_body, "html"))
+    return message
+
+
+def _send_message(message, sender_email: str, sender_password: str, recipients: List[str]) -> None:
+    server = smtplib.SMTP(config.EMAIL_SETTINGS["smtp_server"], config.EMAIL_SETTINGS["smtp_port"])
+    server.starttls()
+    server.login(sender_email, sender_password)
+    for recipient in recipients:
+        server.sendmail(sender_email, recipient, message.as_string())
+        logger.info(f"Email sent successfully to {recipient}")
+    server.quit()
+
 
 def send_combined_email() -> None:
-    """Send combined email with all product information (global list)."""
+    """Send one email with every product from config.py."""
     try:
         sender_email, sender_password, recipient_emails = get_email_credentials()
-        
-        all_products_info = []
-        prices_for_subject = []
-
-        # Scrape all products
-        for company, links in config.PRODUCT_LINKS.items():
-            for link in links:
-                if company == "lululemon":
-                    name, price, image = scrape_lululemon(link)
-                elif company == "nike":
-                    name, price, image = scrape_nike(link)
-                else:
-                    logger.warning(f"Unknown company: {company}")
-                    continue
-                    
-                all_products_info.append((name, price, image, link, company))
-                # Clean price for subject line
-                clean_price = price.replace("USD", "").replace("$", "").strip()
-                prices_for_subject.append(clean_price)
-
-        if not all_products_info:
-            logger.error("No products were successfully scraped")
-            return
-
-        # Compose email
-        message = MIMEMultipart()
-        message['From'] = sender_email
-        message['To'] = ", ".join(recipient_emails)
-
-        # Create dynamic subject line
-        subject_prices = ", ".join(prices_for_subject)
-        message['Subject'] = f"{subject_prices} – Your Tracked Products ({datetime.now().strftime('%Y-%m-%d')})"
-
-        # Build email body
-        html_lines = [
-            "<html><body>",
-            f"<h2>Here are your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>"
+        entries = [
+            {"company": company, "url": link}
+            for company, links in config.PRODUCT_LINKS.items()
+            for link in links
         ]
-
-        for name, price, image, link, company in all_products_info:
-            card = f"""
-            <div style="width: 100%; text-align: center;">
-                <div style="
-                    display: inline-block;
-                    border: 1px solid #ccc;
-                    padding: 20px;
-                    margin-bottom: 20px;
-                    max-width: 400px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                ">
-                    <a href="{link}" target="_blank" style="text-decoration: none; color: inherit;">
-                        <h3 style="margin: 0 0 10px 0; color: #333;">{name}</h3>
-                        <p style="font-size: 18px; font-weight: bold; color: #e74c3c; margin: 10px 0;">{price}</p>
-                        <p style="font-size: 12px; color: #666; margin: 5px 0;">{company.upper()}</p>
-                        {f'<img src="{image}" alt="{name}" style="width: 80%; max-width: 300px; height: auto; border-radius: 4px;" />' if image else ''}
-                    </a>
-                </div>
-            </div>
-            """
-            html_lines.append(card)
-
-        html_lines.append("</body></html>")
-        html_body = "\n".join(html_lines)
-        message.attach(MIMEText(html_body, 'html'))
-
-        # Send email
-        server = smtplib.SMTP(config.EMAIL_SETTINGS["smtp_server"], config.EMAIL_SETTINGS["smtp_port"])
-        server.starttls()
-        server.login(sender_email, sender_password)
-        
-        for recipient in recipient_emails:
-            server.sendmail(sender_email, recipient, message.as_string())
-            logger.info(f"Email sent successfully to {recipient}")
-            
-        server.quit()
-        logger.info("Combined email sent successfully to all recipients")
-        
-    except Exception as e:
-        logger.error(f"Failed to send combined email: {e}")
+        products = _collect_products(entries)
+        if not products:
+            logger.error("No products were scraped")
+            return
+        message = _build_email(sender_email, recipient_emails, products)
+        _send_message(message, sender_email, sender_password, recipient_emails)
+        logger.info("Combined email sent successfully")
+    except Exception as exc:
+        logger.error(f"Failed to send combined email: {exc}")
 
 
 def send_personalized_emails() -> None:
-    """Send personalized emails per recipient based on their subscriptions."""
+    """Send each recipient a digest of the products they follow."""
     try:
         sender_email, sender_password, recipient_emails = get_email_credentials()
         all_subs = subscriptions_store.list_all_subscriptions()
 
-        server = smtplib.SMTP(config.EMAIL_SETTINGS["smtp_server"], config.EMAIL_SETTINGS["smtp_port"])
-        server.starttls()
-        server.login(sender_email, sender_password)
-
-        for recipient in set(recipient_emails):
-            products = all_subs.get(recipient.lower(), [])
-            # Fallback to global products if user has none
-            if not products:
+        for recipient in sorted(set(email.lower() for email in recipient_emails)):
+            entries = all_subs.get(recipient, [])
+            if not entries:
                 logger.info(f"No personalized products for {recipient}, using global config list")
-                per_user_links = []
-                for company, links in config.PRODUCT_LINKS.items():
-                    for link in links:
-                        per_user_links.append({"company": company, "url": link})
-            else:
-                per_user_links = products
+                entries = [
+                    {"company": company, "url": link}
+                    for company, links in config.PRODUCT_LINKS.items()
+                    for link in links
+                ]
 
-            collected = []
-            subject_prices: List[str] = []
-            for entry in per_user_links:
-                company = entry.get("company")
-                link = entry.get("url")
-                if company == "lululemon":
-                    name, price, image = scrape_lululemon(link)
-                elif company == "nike":
-                    name, price, image = scrape_nike(link)
-                else:
-                    continue
-                collected.append((name, price, image, link, company))
-                subject_prices.append(price.replace("USD", "").replace("$", "").strip())
-
-            if not collected:
+            products = _collect_products(entries)
+            if not products:
                 logger.info(f"No products to email for {recipient}")
                 continue
 
-            # Compose email
-            message = MIMEMultipart()
-            message['From'] = sender_email
-            message['To'] = recipient
-            subject_prices_str = ", ".join(subject_prices)
-            message['Subject'] = f"{subject_prices_str} – Your Tracked Products ({datetime.now().strftime('%Y-%m-%d')})"
-
-            html_lines = [
-                "<html><body>",
-                f"<h2>Your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>"
-            ]
-            for name, price, image, link, company in collected:
-                card = f"""
-                <div style=\"width: 100%; text-align: center;\">
-                    <div style=\"
-                        display: inline-block;
-                        border: 1px solid #ccc;
-                        padding: 20px;
-                        margin-bottom: 20px;
-                        max-width: 400px;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    \">
-                        <a href=\"{link}\" target=\"_blank\" style=\"text-decoration: none; color: inherit;\">
-                            <h3 style=\"margin: 0 0 10px 0; color: #333;\">{name}</h3>
-                            <p style=\"font-size: 18px; font-weight: bold; color: #e74c3c; margin: 10px 0;\">{price}</p>
-                            <p style=\"font-size: 12px; color: #666; margin: 5px 0;\">{company.upper()}</p>
-                            {f'<img src="{image}" alt="{name}" style="width: 80%; max-width: 300px; height: auto; border-radius: 4px;" />' if image else ''}
-                        </a>
-                    </div>
-                </div>
-                """
-                html_lines.append(card)
-            html_lines.append("</body></html>")
-            message.attach(MIMEText("\n".join(html_lines), 'html'))
-
-            server.sendmail(sender_email, recipient, message.as_string())
+            message = _build_email(sender_email, [recipient], products)
+            _send_message(message, sender_email, sender_password, [recipient])
             logger.info(f"Personalized email sent to {recipient}")
+    except Exception as exc:
+        logger.error(f"Failed to send personalized emails: {exc}")
 
-        server.quit()
-    except Exception as e:
-        logger.error(f"Failed to send personalized emails: {e}")
 
 def resource_path(relative_path: str) -> str:
     """Get absolute path to resource, works for dev and for PyInstaller."""

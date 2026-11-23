@@ -1,321 +1,671 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sale Tracker Dashboard</title>
-    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sale Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0b3558;
+    --primary: #006bff;
+    --primary-deep: #004eba;
+    --text-secondary: #476788;
+    --text-disabled: #a6bbd1;
+    --border: #d4e0ed;
+    --fill: #f0f3f8;
+    --canvas: #f8f9fb;
+    --surface: #ffffff;
+    --danger: #c0342b;
+    --danger-bg: #fdf0ef;
+    --warn: #8a5a00;
+    --warn-bg: #fff7e6;
+    --ok: #157347;
+    --ok-bg: #eaf7f0;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --shadow-card: rgba(71,103,136,.04) 0 4px 5px, rgba(71,103,136,.03) 0 8px 15px, rgba(71,103,136,.08) 0 30px 50px;
+    --shadow-soft: rgba(71,103,136,.06) 0 1px 2px, rgba(71,103,136,.06) 0 8px 24px;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  button, input { font: inherit; }
+
+  .shell { max-width: 1000px; margin: 0 auto; padding: 24px 24px 64px; }
+
+  /* ---------- Header ---------- */
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 0 32px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand-mark {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--ink); color: #fff;
+    display: grid; place-items: center; flex: none;
+  }
+  .brand h1 { font-size: 20px; line-height: 1.2; margin: 0; font-weight: 700; letter-spacing: -.01em; }
+  .brand p { margin: 2px 0 0; font-size: 13px; color: var(--text-secondary); }
+  .account { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .account-email {
+    font-size: 13px; color: var(--text-secondary);
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius: 9999px;
+    max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .link-btn {
+    background: none; border: 0; color: var(--primary-deep);
+    font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 4px; border-radius: var(--radius-sm);
+  }
+  .link-btn:hover { text-decoration: underline; }
+
+  /* ---------- Intro / form card ---------- */
+  .intro { margin-bottom: 32px; }
+  .intro h2 {
+    font-size: 34px; line-height: 1.2; letter-spacing: -.02em;
+    margin: 0 0 8px; font-weight: 700;
+  }
+  .intro p { margin: 0; color: var(--text-secondary); font-size: 16px; max-width: 560px; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .tracker-form { display: grid; gap: 16px; margin-top: 24px; }
+  .tracker-form .row { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 720px) {
+    .tracker-form .row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; align-items: end; }
+    .tracker-form .row:has(#emailField[hidden]) { grid-template-columns: minmax(0, 1fr) auto; }
+  }
+  .field { display: grid; gap: 6px; min-width: 0; }
+  .field label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+  .field input {
+    width: 100%;
+    background: var(--fill);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .field input::placeholder { color: var(--text-disabled); }
+  .field input:focus {
+    background: var(--surface);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0,107,255,.14);
+  }
+  .field input:disabled { color: var(--text-secondary); background: var(--fill); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid transparent; border-radius: var(--radius-md);
+    padding: 12px 20px; font-size: 15px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, transform .06s ease;
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { cursor: not-allowed; opacity: .6; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-deep); }
+  .btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--border); }
+  .btn-secondary:hover:not(:disabled) { background: var(--fill); }
+  .btn-ghost { background: none; color: var(--text-secondary); }
+  .btn-ghost:hover:not(:disabled) { color: var(--ink); background: var(--fill); }
+  .btn-sm { padding: 8px 14px; font-size: 14px; }
+
+  .form-note { margin: 0; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex: none; }
+
+  /* ---------- Toolbar ---------- */
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin: 40px 0 16px; flex-wrap: wrap;
+  }
+  .section-head h3 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .section-head .meta { color: var(--text-secondary); font-size: 13px; font-weight: 400; margin-left: 8px; }
+  .section-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ---------- Product grid ---------- */
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: var(--shadow-soft);
+    transition: box-shadow .18s ease, transform .18s ease;
+  }
+  .card:hover { box-shadow: var(--shadow-card); transform: translateY(-1px); }
+  .card-media {
+    position: relative; aspect-ratio: 4 / 3; background: var(--fill);
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .card-media img { width: 100%; height: 100%; object-fit: contain; padding: 12px; position: relative; z-index: 1; }
+  .card-media .placeholder { color: var(--text-disabled); position: absolute; inset: 0; display: grid; place-items: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 9999px;
+  }
+  .badge-retailer { position: absolute; top: 12px; left: 12px; background: var(--surface); color: var(--ink); border: 1px solid var(--border); }
+  .badge-ok { background: var(--ok-bg); color: var(--ok); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn); }
+  .badge-err { background: var(--danger-bg); color: var(--danger); }
+
+  .card-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .product-name {
+    font-size: 15px; font-weight: 600; line-height: 1.35; margin: 0; color: var(--ink);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    min-height: 40px;
+  }
+  .price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; }
+  .price { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+  .price.missing { color: var(--text-disabled); font-size: 16px; font-weight: 600; }
+  .status-line { font-size: 12px; color: var(--text-secondary); min-height: 18px; }
+  .status-line.is-error { color: var(--danger); }
+  .status-line .when { color: var(--text-disabled); }
+
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; border-top: 1px solid var(--border);
+    background: #fbfcfe;
+  }
+  .card-footer a { color: var(--primary-deep); font-size: 13px; font-weight: 600; text-decoration: none; }
+  .card-footer a:hover { text-decoration: underline; }
+  .remove-btn {
+    background: none; border: 0; color: var(--text-secondary); font-size: 13px;
+    cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm);
+  }
+  .remove-btn:hover { color: var(--danger); background: var(--danger-bg); }
+
+  /* ---------- Empty / skeleton ---------- */
+  .empty {
+    background: var(--surface); border: 1px dashed var(--border);
+    border-radius: var(--radius-lg); padding: 40px 24px; text-align: center;
+  }
+  .empty .icon { color: var(--text-disabled); margin-bottom: 8px; }
+  .empty h4 { margin: 0 0 4px; font-size: 16px; }
+  .empty p { margin: 0; color: var(--text-secondary); font-size: 14px; }
+
+  .skeleton { pointer-events: none; }
+  .skeleton .card-media, .skeleton .bar {
+    background: linear-gradient(90deg, var(--fill) 25%, #e8eef6 37%, var(--fill) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.2s ease infinite;
+  }
+  .skeleton .bar { height: 12px; border-radius: 6px; }
+  .skeleton .bar.wide { width: 85%; }
+  .skeleton .bar.short { width: 45%; height: 20px; }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+  /* ---------- Footer ---------- */
+  footer.page {
+    margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  footer.page a { color: var(--primary-deep); text-decoration: none; }
+  footer.page a:hover { text-decoration: underline; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px);
+    background: var(--ink); color: #fff; font-size: 14px; font-weight: 500;
+    padding: 12px 18px; border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card); opacity: 0; pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease; max-width: calc(100vw - 32px);
+    z-index: 50;
+  }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #toast.error { background: var(--danger); }
+
+  .spinner {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+    animation: spin .7s linear infinite;
+  }
+  .btn-secondary .spinner { border-color: rgba(11,53,88,.2); border-top-color: var(--ink); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 560px) {
+    .shell { padding: 16px 16px 48px; }
+    .intro h2 { font-size: 28px; }
+    header.top { padding-bottom: 24px; }
+    .account-email { display: none; }
+    .panel { padding: 20px; border-radius: var(--radius-lg); }
+  }
+</style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div x-data="dashboard()" x-init="loadData()" class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-800">Sale Tracker Dashboard</h1>
-                    <p class="text-gray-600 mt-2">Monitor product prices from Lululemon and Nike</p>
-                </div>
-                <div class="flex space-x-4">
-                    <div class="text-right">
-                        <div class="text-sm text-gray-500">Status</div>
-                        {% if scheduler_text %}
-                        <div class="font-semibold text-blue-700">{{ scheduler_text }}</div>
-                        {% else %}
-                        <div :class="isRunning ? 'text-green-600' : 'text-red-600'" class="font-semibold">
-                            <span x-text="isRunning ? 'Running' : 'Stopped'"></span>
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="text-right" x-show="lastEmail">
-                        <div class="text-sm text-gray-500">Last Email</div>
-                        <div class="font-semibold text-gray-800" x-text="formatDate(lastEmail)"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Minimal Message -->
-        <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded p-4 mb-6">
-            Add your email and product URLs below. You’ll receive a daily email at 9 PM UTC.
-        </div>
-
-        <!-- Status Messages -->
-        <div x-show="message" x-transition class="fixed top-4 right-4 z-50">
-            <div :class="messageType === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'" 
-                 class="shadow-lg rounded-md px-4 py-3">
-                <p class="text-sm" x-text="message"></p>
-            </div>
-        </div>
-
-        <!-- Remove configuration block for minimal UI -->
-
-        <!-- Minimal: Email + Product URL -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Get Notified</h2>
-            <form @submit.prevent="addRecipient" class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Your Email</label>
-                <div class="flex gap-3">
-                    <input x-model="recipientEmail" type="email" required placeholder="you@example.com" aria-label="Your email" class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-                    <button type="submit" :disabled="!recipientEmail" class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-600 text-white px-4 py-2 rounded">Save Email</button>
-                </div>
-                <p class="text-xs text-gray-500 mt-2">We’ll send a daily email at 9 PM.</p>
-            </form>
-            <form @submit.prevent="addSubscription">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Product URL</label>
-                <div class="space-y-3">
-                    <input x-model="subEmail" type="email" required placeholder="you@example.com" aria-label="Subscription email" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300" />
-                    <input x-model="subUrl" type="url" required placeholder="https://shop.lululemon.com/... or https://www.nike.com/t/..." aria-label="Product URL" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-300" />
-                    <button type="submit" :disabled="!subEmail || !subUrl" class="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-600 text-white px-4 py-2 rounded">Add Product</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Minimal Subscriptions List -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Subscriptions</h2>
-            <div class="flex gap-3 mb-3">
-                <input x-model="subListEmail" type="email" placeholder="you@example.com" aria-label="Lookup email" class="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300" />
-                <button @click="loadSubscriptions()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded">Load</button>
-            </div>
-            <div class="space-y-2" x-show="subscriptions.length > 0">
-                <template x-for="item in subscriptions" :key="item.url">
-                    <div class="flex items-center justify-between border rounded px-3 py-2">
-                        <a :href="item.url" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 truncate" x-text="item.url"></a>
-                        <button @click="removeSubscription(item.url)" class="text-sm text-red-600 hover:text-red-800">Remove</button>
-                    </div>
-                </template>
-            </div>
-            <div x-show="subscriptions.length === 0" class="text-gray-500 text-sm">No subscriptions loaded.</div>
-        </div>
-
-        <!-- Products Grid -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                Tracked Products 
-                <span x-show="products.length > 0" class="text-sm font-normal text-gray-500">
-                    (Last updated: <span x-text="formatDate(lastUpdate)"></span>)
-                </span>
-            </h2>
-            
-            <div x-show="products.length === 0" class="text-center py-12 text-gray-500">
-                <div class="text-4xl mb-4">📦</div>
-                <p>No products scraped yet. Click "Scrape Products" to start!</p>
-            </div>
-
-            <div x-show="products.length > 0" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <template x-for="product in products" :key="product.link">
-                    <div class="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                        <!-- Product Image -->
-                        <div class="aspect-w-16 aspect-h-9 bg-gray-200">
-                            <img x-show="product.image" 
-                                 :src="product.image" 
-                                 :alt="product.name"
-                                 class="w-full h-48 object-cover"
-                                 @error="$event.target.style.display = 'none'">
-                            <div x-show="!product.image" class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                <span class="text-gray-400 text-4xl">📦</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Product Info -->
-                        <div class="p-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span :class="product.company === 'lululemon' ? 'bg-red-100 text-red-800' : 'bg-black text-white'" 
-                                      class="px-2 py-1 rounded text-xs font-medium uppercase" 
-                                      x-text="product.company"></span>
-                                <span :class="product.success ? 'text-green-600' : 'text-red-600'" 
-                                      class="text-xs">
-                                    <span x-text="product.success ? '✅' : '❌'"></span>
-                                </span>
-                            </div>
-                            
-                            <h3 class="font-semibold text-gray-800 mb-2 line-clamp-2" x-text="product.name"></h3>
-                            
-                            <div class="flex items-center justify-between">
-                                <span class="text-lg font-bold" 
-                                      :class="product.success ? 'text-green-600' : 'text-red-600'" 
-                                      x-text="product.price"></span>
-                                <a :href="product.link" 
-                                   target="_blank" 
-                                   class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                    View →
-                                </a>
-                            </div>
-                            
-                            <div class="mt-2 text-xs text-gray-500" x-text="formatDate(product.timestamp)"></div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Sale Tracker</h1>
+        <p>Prices from your favourite stores, one email a day</p>
+      </div>
     </div>
+    <div class="account" id="account" hidden>
+      <span class="account-email" id="accountEmail"></span>
+      <button class="link-btn" id="switchEmail" type="button">Change</button>
+    </div>
+  </header>
 
-    <script>
-        function dashboard() {
-            return {
-                products: [],
-                isRunning: false,
-                lastEmail: null,
-                lastUpdate: null,
-                loading: false,
-                message: '',
-                messageType: 'success',
-                recipients: [],
-                recipientEmail: '',
-                // Subscriptions state
-                subEmail: '',
-                subUrl: '',
-                subListEmail: '',
-                subscriptions: [],
+  <main>
+    <section class="intro">
+      <h2 id="introTitle">Track a product price.</h2>
+      <p id="introCopy">Paste a product link from Nike, Lululemon or almost any online store. We check the price and email you a daily digest.</p>
+    </section>
 
-                async loadData() {
-                    try {
-                        const response = await fetch('/api/scrape');
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            this.products = data.products;
-                            this.lastUpdate = data.timestamp;
-                        }
-                        
-                        // Load status
-                        const statusResponse = await fetch('/api/status');
-                        const statusData = await statusResponse.json();
-                        this.isRunning = statusData.is_running;
-                        this.lastEmail = statusData.last_email_sent;
-                        // Load recipients
-                        const recRes = await fetch('/api/recipients');
-                        const recData = await recRes.json();
-                        if (recData.success) this.recipients = recData.recipients;
-                        // Load subscriptions if an email is set
-                        if (this.subListEmail) {
-                            await this.loadSubscriptions();
-                        }
-                        
-                    } catch (error) {
-                        this.showMessage('Failed to load data: ' + error.message, 'error');
-                    }
-                },
+    <section class="panel" aria-label="Add a product">
+      <form class="tracker-form" id="trackForm" novalidate>
+        <div class="row">
+          <div class="field" id="emailField">
+            <label for="email">Your email</label>
+            <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
+          </div>
+          <div class="field">
+            <label for="productUrl">Product URL</label>
+            <input id="productUrl" name="productUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://www.nike.com/t/..." required>
+          </div>
+          <div class="field" style="align-self:end">
+            <label aria-hidden="true">&nbsp;</label>
+            <button class="btn btn-primary" id="submitBtn" type="submit">
+              <span id="submitLabel">Start tracking</span>
+              <span class="spinner" id="submitSpinner" hidden></span>
+            </button>
+          </div>
+        </div>
+        <p class="form-note"><span class="dot"></span> Daily digest at 9 PM UTC. No account needed.</p>
+      </form>
+    </section>
 
-                // Remove manual scrape to keep UI minimal
+    <section id="trackedSection" hidden>
+      <div class="section-head">
+        <h3>Tracked products <span class="meta" id="productMeta"></span></h3>
+        <div class="section-actions">
+          <button class="btn btn-secondary btn-sm" id="refreshBtn" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>
+            </svg>
+            <span id="refreshLabel">Refresh prices</span>
+            <span class="spinner" id="refreshSpinner" hidden></span>
+          </button>
+        </div>
+      </div>
+      <div class="grid" id="productGrid" aria-live="polite"></div>
+    </section>
+  </main>
 
-                async addSubscription() {
-                    try {
-                        const response = await fetch('/api/subscriptions', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: this.subEmail, url: this.subUrl })
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                            this.showMessage('Product added to your subscriptions', 'success');
-                            this.subUrl = '';
-                            if (this.subListEmail === this.subEmail) this.loadSubscriptions();
-                        } else {
-                            this.showMessage(data.error || 'Failed to add product', 'error');
-                        }
-                    } catch (e) {
-                        this.showMessage('Error adding product: ' + e.message, 'error');
-                    }
-                },
+  <footer class="page">
+    <span>Scraped directly from the storefront's product data.</span>
+    <span>Emails are sent daily at 9 PM UTC.</span>
+  </footer>
+</div>
 
-                async loadSubscriptions() {
-                    try {
-                        const response = await fetch('/api/subscriptions?email=' + encodeURIComponent(this.subListEmail));
-                        const data = await response.json();
-                        if (data.success) {
-                            this.subscriptions = data.products || [];
-                        } else {
-                            this.showMessage(data.error || 'Failed to load subscriptions', 'error');
-                        }
-                    } catch (e) {
-                        this.showMessage('Error loading subscriptions: ' + e.message, 'error');
-                    }
-                },
+<div id="toast" role="status" aria-live="polite"></div>
 
-                async removeSubscription(url) {
-                    try {
-                        const response = await fetch('/api/subscriptions', {
-                            method: 'DELETE',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: this.subListEmail, url })
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                            this.showMessage('Subscription removed', 'success');
-                            this.subscriptions = this.subscriptions.filter(i => i.url !== url);
-                        } else {
-                            this.showMessage(data.error || 'Failed to remove subscription', 'error');
-                        }
-                    } catch (e) {
-                        this.showMessage('Error removing subscription: ' + e.message, 'error');
-                    }
-                },
+<script>
+  const STORAGE_KEY = 'saletracker.email';
 
-                async addRecipient() {
-                    try {
-                        const response = await fetch('/api/recipients', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: this.recipientEmail })
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                            this.showMessage('Added recipient successfully', 'success');
-                            this.recipientEmail = '';
-                            const recRes = await fetch('/api/recipients');
-                            const recData = await recRes.json();
-                            if (recData.success) this.recipients = recData.recipients;
-                        } else {
-                            this.showMessage(data.error || 'Failed to add recipient', 'error');
-                        }
-                    } catch (e) {
-                        this.showMessage('Error adding recipient: ' + e.message, 'error');
-                    }
-                },
+  const state = {
+    email: localStorage.getItem(STORAGE_KEY) || '',
+    products: [],
+    loading: false,
+    refreshing: false,
+    removed: new Set(),
+  };
 
-                async removeRecipient(email) {
-                    try {
-                        const response = await fetch('/api/recipients', {
-                            method: 'DELETE',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email })
-                        });
-                        const data = await response.json();
-                        if (data.success) {
-                            this.showMessage('Recipient removed', 'success');
-                            this.recipients = this.recipients.filter(e => e !== email);
-                        } else {
-                            this.showMessage(data.error || 'Failed to remove recipient', 'error');
-                        }
-                    } catch (e) {
-                        this.showMessage('Error removing recipient: ' + e.message, 'error');
-                    }
-                },
+  const el = (id) => document.getElementById(id);
+  const emailInput = el('email');
+  const urlInput = el('productUrl');
+  const submitBtn = el('submitBtn');
+  const submitLabel = el('submitLabel');
+  const submitSpinner = el('submitSpinner');
+  const refreshBtn = el('refreshBtn');
+  const refreshLabel = el('refreshLabel');
+  const refreshSpinner = el('refreshSpinner');
+  const grid = el('productGrid');
+  const trackedSection = el('trackedSection');
+  const account = el('account');
+  const accountEmail = el('accountEmail');
+  const emailField = el('emailField');
+  const introTitle = el('introTitle');
+  const introCopy = el('introCopy');
+  const productMeta = el('productMeta');
 
-                // Remove manual send to keep UI minimal
+  let toastTimer = null;
+  function toast(message, isError = false) {
+    const node = el('toast');
+    node.textContent = message;
+    node.classList.toggle('error', isError);
+    node.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => node.classList.remove('show'), 3200);
+  }
 
-                // Remove scheduler toggles in minimal UI
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
 
-                showMessage(text, type = 'success') {
-                    this.message = text;
-                    this.messageType = type;
-                    setTimeout(() => {
-                        this.message = '';
-                    }, 5000);
-                },
+  function validEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+  }
 
-                formatDate(dateString) {
-                    if (!dateString) return 'Never';
-                    return new Date(dateString).toLocaleString();
-                }
-            }
-        }
-    </script>
+  function validUrl(value) {
+    try {
+      const parsed = new URL(value.trim());
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  function formatWhen(iso) {
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '';
+    const diff = Math.round((Date.now() - date.getTime()) / 60000);
+    if (diff < 1) return 'just now';
+    if (diff < 60) return diff + ' min ago';
+    if (diff < 60 * 24) return Math.round(diff / 60) + ' h ago';
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function setBusy(kind, busy) {
+    if (kind === 'submit') {
+      submitBtn.disabled = busy;
+      submitSpinner.hidden = !busy;
+      submitLabel.textContent = busy ? 'Checking price' : (state.email ? 'Add product' : 'Start tracking');
+    } else {
+      refreshBtn.disabled = busy;
+      refreshSpinner.hidden = !busy;
+      refreshLabel.textContent = busy ? 'Checking' : 'Refresh prices';
+      refreshBtn.querySelector('svg')?.toggleAttribute('hidden', busy);
+    }
+  }
+
+  function showSignedIn() {
+    const signedIn = Boolean(state.email);
+    account.hidden = !signedIn;
+    accountEmail.textContent = state.email;
+    accountEmail.title = state.email;
+    emailField.hidden = signedIn;
+    emailInput.required = !signedIn;
+    introTitle.textContent = signedIn ? 'Your tracked prices.' : 'Track a product price.';
+    introCopy.textContent = signedIn
+      ? 'Add another product link and we will keep watching its price for you.'
+      : 'Paste a product link from Nike, Lululemon or almost any online store. We check the price and email you a daily digest.';
+    submitLabel.textContent = signedIn ? 'Add product' : 'Start tracking';
+    trackedSection.hidden = !signedIn;
+  }
+
+  function cardMarkup(product) {
+    const name = product.name || 'Unknown product';
+    const price = product.price_display;
+    const retailer = product.retailer || 'Store';
+    const status = product.status || (product.success ? 'ok' : 'error');
+    const when = formatWhen(product.fetched_at);
+    const hasImage = Boolean(product.image);
+
+    let badge = '<span class="badge badge-ok">Live</span>';
+    let statusLine = when ? '<span class="when">Checked ' + escapeHtml(when) + '</span>' : '';
+    if (status === 'blocked') {
+      badge = '<span class="badge badge-warn">Blocked</span>';
+      statusLine = 'The store refused this check. We will retry in the daily email.';
+    } else if (status === 'price_missing') {
+      badge = '<span class="badge badge-warn">No price</span>';
+      statusLine = 'Page loaded but no price was published in its product data.';
+    } else if (status === 'error') {
+      badge = '<span class="badge badge-err">Failed</span>';
+      statusLine = escapeHtml(product.error || 'This check failed.');
+    }
+
+    return `
+      <article class="card" data-url="${escapeHtml(product.url)}">
+        <div class="card-media">
+          <span class="badge badge-retailer">${escapeHtml(retailer)}</span>
+          <span class="placeholder" aria-hidden="true"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span>
+          ${hasImage
+            ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
+            : ''}
+        </div>
+        <div class="card-body">
+          <span>${badge}</span>
+          <h4 class="product-name">${escapeHtml(name)}</h4>
+          <div class="price-row">
+            ${price
+              ? `<span class="price">${escapeHtml(price)}</span>`
+              : `<span class="price missing">${status === 'blocked' ? 'Price hidden' : 'Price unavailable'}</span>`}
+          </div>
+          <p class="status-line${status === 'error' ? ' is-error' : ''}">${statusLine}</p>
+        </div>
+        <div class="card-footer">
+          <a href="${escapeHtml(product.url)}" target="_blank" rel="noopener noreferrer">View product</a>
+          <button class="remove-btn" type="button" data-action="remove">Remove</button>
+        </div>
+      </article>`;
+  }
+
+  function skeletonMarkup() {
+    return Array.from({ length: 2 }).map(() => `
+      <div class="card skeleton">
+        <div class="card-media"></div>
+        <div class="card-body">
+          <div class="bar short"></div>
+          <div class="bar wide"></div>
+          <div class="bar short"></div>
+        </div>
+      </div>`).join('');
+  }
+
+  function render() {
+    if (!state.email) return;
+    const products = state.products;
+
+    if (state.loading) {
+      productMeta.textContent = 'checking prices…';
+      grid.innerHTML = skeletonMarkup();
+      return;
+    }
+
+    productMeta.textContent = products.length
+      ? `${products.length} product${products.length === 1 ? '' : 's'}`
+      : '';
+
+    if (!products.length) {
+      grid.innerHTML = `
+        <div class="empty" style="grid-column:1/-1">
+          <div class="icon" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7 12 3 4 7v10l8 4 8-4V7Z"/><path d="m4 7 8 4 8-4"/><path d="M12 11v10"/></svg>
+          </div>
+          <h4>No products tracked yet</h4>
+          <p>Paste a product link above to start watching its price.</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = products.map(cardMarkup).join('');
+  }
+
+  async function request(url, options = {}) {
+    const response = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+    let payload = {};
+    try { payload = await response.json(); } catch { /* empty body */ }
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.error || payload.details || `Request failed (${response.status})`);
+    }
+    return payload;
+  }
+
+  async function loadProducts({ refresh = false } = {}) {
+    if (!state.email) return;
+    state.loading = !refresh;
+    if (refresh) state.refreshing = true;
+    setBusy('refresh', refresh);
+    render();
+
+    try {
+      const payload = refresh
+        ? await request('/api/products/refresh', {
+            method: 'POST',
+            body: JSON.stringify({ email: state.email }),
+          })
+        : await request('/api/products?email=' + encodeURIComponent(state.email));
+      state.products = (payload.products || []).filter((p) => !state.removed.has(p.url));
+      if (refresh) toast('Prices updated');
+    } catch (error) {
+      toast(error.message, true);
+    } finally {
+      state.loading = false;
+      state.refreshing = false;
+      setBusy('refresh', false);
+      render();
+    }
+  }
+
+  async function saveEmail(email) {
+    await request('/api/recipients', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+    state.email = email;
+    localStorage.setItem(STORAGE_KEY, email);
+    showSignedIn();
+  }
+
+  el('trackForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (state.loading || submitBtn.disabled) return;
+
+    const email = state.email || emailInput.value.trim().toLowerCase();
+    const url = urlInput.value.trim();
+
+    if (!validEmail(email)) {
+      emailInput.focus();
+      toast('Enter a valid email address', true);
+      return;
+    }
+    if (!validUrl(url)) {
+      urlInput.focus();
+      toast('Enter a full product link starting with https://', true);
+      return;
+    }
+
+    setBusy('submit', true);
+    try {
+      if (!state.email) {
+        await saveEmail(email);
+      }
+      await request('/api/subscriptions', {
+        method: 'POST',
+        body: JSON.stringify({ email, url }),
+      });
+      urlInput.value = '';
+      state.removed.delete(url);
+      toast('Product added — checking its price');
+      await loadProducts();
+    } catch (error) {
+      toast(error.message, true);
+    } finally {
+      setBusy('submit', false);
+    }
+  });
+
+  refreshBtn.addEventListener('click', () => {
+    if (!state.refreshing) loadProducts({ refresh: true });
+  });
+
+  grid.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-action="remove"]');
+    if (!button) return;
+    const card = button.closest('[data-url]');
+    const url = card?.dataset.url;
+    if (!url) return;
+
+    button.disabled = true;
+    try {
+      await request('/api/subscriptions', {
+        method: 'DELETE',
+        body: JSON.stringify({ email: state.email, url }),
+      });
+      state.removed.add(url);
+      state.products = state.products.filter((product) => product.url !== url);
+      render();
+      toast('Product removed');
+    } catch (error) {
+      button.disabled = false;
+      toast(error.message, true);
+    }
+  });
+
+  el('switchEmail').addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEY);
+    state.email = '';
+    state.products = [];
+    emailInput.value = '';
+    urlInput.value = '';
+    showSignedIn();
+    render();
+    emailInput.focus();
+  });
+
+  [emailInput, urlInput].forEach((input) => {
+    input.addEventListener('input', () => input.setCustomValidity(''));
+  });
+
+  showSignedIn();
+  if (state.email) {
+    emailInput.value = state.email;
+    loadProducts();
+  } else {
+    emailInput.focus();
+  }
+</script>
 </body>
 </html>

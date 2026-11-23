@@ -26,12 +26,15 @@ def _write_store(store: Dict[str, Any]) -> None:
 
 
 def _detect_company(product_url: str) -> Optional[str]:
-    host = urlparse(product_url).netloc.lower()
+    """Return a short retailer key for any valid product URL."""
+    host = urlparse(product_url).netloc.lower().replace("www.", "")
+    if not host:
+        return None
     if "lululemon" in host:
         return "lululemon"
     if "nike" in host:
         return "nike"
-    return None
+    return host.split(".")[0]
 
 
 def get_products(email: str) -> List[Dict[str, str]]:
@@ -52,7 +55,7 @@ def add_product(email: str, product_url: str) -> Dict[str, Any]:
 
     company = _detect_company(product_url)
     if not company:
-        return {"success": False, "error": "Unsupported product URL (only Lululemon/Nike supported)"}
+        return {"success": False, "error": "Unsupported product URL"}
 
     store = _read_store()
     subs = store.setdefault("subscriptions", {}).setdefault(email_key, [])

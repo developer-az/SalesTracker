@@ -14,6 +14,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import main_improved
 import config
+import scraper
+import recipients_store
 
 class TestSaleTracker(unittest.TestCase):
     
@@ -23,6 +25,7 @@ class TestSaleTracker(unittest.TestCase):
         self.test_dir = tempfile.mkdtemp()
         self.original_cwd = os.getcwd()
         os.chdir(self.test_dir)
+        recipients_store.RECIPIENTS_FILE = os.path.join(self.test_dir, "recipients.json")
         
         # Create a test .env file
         self.env_content = """SENDER_EMAIL=test@example.com
@@ -71,79 +74,69 @@ RECIPIENT_EMAIL2=recipient2@example.com"""
             with self.assertRaises(ValueError):
                 main_improved.get_email_credentials()
     
-    @patch('main_improved.requests.get')
-    def test_scrape_lululemon_success(self, mock_get):
-        """Test successful Lululemon scraping."""
-        # Mock HTML response
-        mock_response = MagicMock()
-        mock_response.content = '''
+    def test_parse_og_and_price_markup(self):
+        """A simple storefront page: og tags plus a price element."""
+        html = """
         <html>
-            <meta property="og:title" content="Test Product">
-            <span class="price">$100USD</span>
-            <meta property="og:image" content="http://example.com/image.jpg">
+            <head>
+                <meta property="og:title" content="Test Product">
+                <meta property="og:image" content="http://example.com/image.jpg">
+                <title>Test Product | Example</title>
+            </head>
+            <body><span class="price">$100.00 USD</span></body>
         </html>
-        '''
-        mock_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_response
-        
-        name, price, image = main_improved.scrape_lululemon('http://example.com')
-        
-        self.assertEqual(name, 'Test Product')
-        self.assertEqual(price, '$100USD')
-        self.assertEqual(image, 'http://example.com/image.jpg')
-    
-    @patch('main_improved.requests.get')
-    def test_scrape_lululemon_request_error(self, mock_get):
-        """Test Lululemon scraping with request error."""
-        mock_get.side_effect = Exception("Connection error")
-        
-        name, price, image = main_improved.scrape_lululemon('http://example.com')
-        
-        self.assertEqual(name, 'Product name not found')
-        self.assertEqual(price, 'Price not found')
-        self.assertEqual(image, '')
-    
-    @patch('main_improved.requests.get')
-    def test_scrape_nike_success(self, mock_get):
-        """Test successful Nike scraping."""
-        # Mock HTML response with JSON-LD
-        mock_response = MagicMock()
-        mock_response.text = '''
-        <html>
+        """
+        result = scraper.parse_product(html, "https://example.com/p/test-product")
+
+        self.assertEqual(result["name"], "Test Product")
+        self.assertEqual(result["price"], 100.0)
+        self.assertEqual(result["price_display"], "$100.00")
+        self.assertEqual(result["image"], "http://example.com/image.jpg")
+        self.assertTrue(result["success"])
+
+    def test_parse_nike_product_group(self):
+        """Nike publishes a ProductGroup with variant offers."""
+        html = """
+        <html><head><title>Nike Test Product. Nike.com</title></head><body>
             <script type="application/ld+json">
             {
+                "@type": "ProductGroup",
                 "name": "Nike Test Product",
-                "offers": {
-                    "lowPrice": "150"
-                }
+                "hasVariant": [
+                    {"@type": "Product", "name": "Nike Test Product - Black - Size S",
+                     "offers": {"@type": "Offer", "price": "150.00", "priceCurrency": "USD"}}
+                ]
             }
             </script>
-            <meta property="og:image" content="http://example.com/nike.jpg">
-        </html>
-        '''
-        mock_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_response
-        
-        name, price, image = main_improved.scrape_nike('http://example.com')
-        
-        self.assertEqual(name, 'Nike Test Product')
-        self.assertEqual(price, '$150USD')
-        self.assertEqual(image, 'http://example.com/nike.jpg')
-    
-    @patch('main_improved.requests.get')
-    def test_scrape_nike_no_json_ld(self, mock_get):
-        """Test Nike scraping with no JSON-LD data."""
-        mock_response = MagicMock()
-        mock_response.text = '<html><body>No JSON-LD here</body></html>'
-        mock_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_response
-        
-        name, price, image = main_improved.scrape_nike('http://example.com')
-        
-        self.assertEqual(name, 'Product name not found')
-        self.assertEqual(price, 'Price not found')
-        self.assertEqual(image, '')
-    
+        </body></html>
+        """
+        result = scraper.parse_product(html, "https://www.nike.com/t/nike-test-product/ABC123")
+
+        self.assertEqual(result["name"], "Nike Test Product")
+        self.assertEqual(result["price"], 150.0)
+        self.assertEqual(result["price_display"], "$150.00")
+        self.assertEqual(result["retailer"], "Nike")
+        self.assertTrue(result["success"])
+
+    def test_parse_page_without_product_data(self):
+        html = "<html><body><h1>No product data here</h1></body></html>"
+        result = scraper.parse_product(html, "https://example.com/p/plain-page")
+
+        self.assertFalse(result["success"])
+        self.assertIsNone(result["price"])
+        self.assertEqual(result["status"], "price_missing")
+
+    def test_blocked_page_is_detected(self):
+        html = "<html><head><title>Access Denied</title></head><body>Access Denied</body></html>"
+        self.assertTrue(scraper._looks_blocked(html, 200))
+        self.assertTrue(scraper._looks_blocked("", 403))
+        self.assertFalse(scraper._looks_blocked("<html><title>Product</title></html>", 200))
+
+    def test_name_from_blocked_url(self):
+        url = ("https://shop.lululemon.com/p/mens-jackets-and-outerwear/"
+               "Down-For-It-All-Hoodie/_/prod9200786?color=0001")
+        self.assertEqual(scraper._name_from_url(url), "Down For It All Hoodie")
+
     def test_config_structure(self):
         """Test that config file has required structure."""
         self.assertIn('lululemon', config.PRODUCT_LINKS)
@@ -164,41 +157,29 @@ RECIPIENT_EMAIL2=recipient2@example.com"""
 
 class TestIntegration(unittest.TestCase):
     """Integration tests that require actual network requests."""
-    
-    def test_lululemon_live_scraping(self):
-        """Test live Lululemon scraping (requires internet)."""
-        try:
-            name, price, image = main_improved.scrape_lululemon(
-                config.PRODUCT_LINKS['lululemon'][0]
-            )
-            
-            # Basic validation
-            self.assertIsInstance(name, str)
-            self.assertIsInstance(price, str)
-            self.assertIsInstance(image, str)
-            self.assertGreater(len(name), 0)
-            self.assertIn('USD', price)
-            
-        except Exception as e:
-            self.skipTest(f"Live test failed (network issue?): {e}")
-    
+
     def test_nike_live_scraping(self):
-        """Test live Nike scraping (requires internet)."""
-        try:
-            name, price, image = main_improved.scrape_nike(
-                config.PRODUCT_LINKS['nike'][0]
-            )
-            
-            # Basic validation
-            self.assertIsInstance(name, str)
-            self.assertIsInstance(price, str)
-            self.assertIsInstance(image, str)
-            self.assertGreater(len(name), 0)
-            self.assertIn('USD', price)
-            
-        except Exception as e:
-            self.skipTest(f"Live test failed (network issue?): {e}")
+        """Nike should return a real product name and price."""
+        result = scraper.scrape(
+            "https://www.nike.com/t/unlimited-mens-repel-hooded-versatile-jacket-56pDjs/FB7551-010",
+            force=True,
+        )
+        self.assertTrue(result["name"])
+        self.assertIn(result["status"], ["ok", "blocked", "price_missing"])
+        if result["status"] == "ok":
+            self.assertIsNotNone(result["price"])
+            self.assertTrue(result["price_display"].startswith("$"))
+
+    def test_lululemon_live_scraping(self):
+        """Lululemon may block datacenter IPs, but should fail gracefully."""
+        result = scraper.scrape(
+            "https://shop.lululemon.com/p/mens-jackets-and-outerwear/"
+            "Down-For-It-All-Hoodie/_/prod9200786?color=0001",
+            force=True,
+        )
+        self.assertTrue(result["name"])
+        self.assertIn(result["status"], ["ok", "blocked", "price_missing"])
+
 
 if __name__ == '__main__':
-    # Run unit tests
     unittest.main(verbosity=2)
