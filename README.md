@@ -88,9 +88,15 @@ curl https://your-app-url/api/health
 ## 🧪 Tests
 
 ```bash
-python3 test_sale_tracker.py
-python3 test_web_app.py
+# Unit tests (no network)
+python -m pytest -q
+
+# Include the live scraping tests against real retailer sites
+RUN_NETWORK_TESTS=1 python -m pytest -q
 ```
+
+CI runs the same suite plus Black, isort, Flake8, Bandit, Trivy and a Docker build
+(see `.github/workflows/enhanced-ci-cd.yml`).
 
 ## 🏗️ Structure
 

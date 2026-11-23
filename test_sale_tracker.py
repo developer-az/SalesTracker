@@ -2,23 +2,24 @@
 Test suite for Sale Tracker application
 """
 
-import unittest
-from unittest.mock import patch, MagicMock
-import sys
 import os
-import tempfile
 import shutil
+import sys
+import tempfile
+import unittest
+from unittest.mock import MagicMock, patch
 
 # Add the current directory to the path so we can import our modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import main_improved
 import config
-import scraper
+import main_improved
 import recipients_store
+import scraper
+
 
 class TestSaleTracker(unittest.TestCase):
-    
+
     def setUp(self):
         """Set up test fixtures."""
         # Create a temporary directory for test files
@@ -26,54 +27,62 @@ class TestSaleTracker(unittest.TestCase):
         self.original_cwd = os.getcwd()
         os.chdir(self.test_dir)
         recipients_store.RECIPIENTS_FILE = os.path.join(self.test_dir, "recipients.json")
-        
+
         # Create a test .env file
         self.env_content = """SENDER_EMAIL=test@example.com
 EMAIL_PASSWORD=test_password
 RECIPIENT_EMAIL=recipient@example.com
 RECIPIENT_EMAIL2=recipient2@example.com"""
-        
+
         with open('.env', 'w') as f:
             f.write(self.env_content)
-    
+
     def tearDown(self):
         """Clean up test fixtures."""
         os.chdir(self.original_cwd)
         shutil.rmtree(self.test_dir)
-    
+
     def test_get_email_credentials_success(self):
         """Test successful email credentials retrieval."""
-        with patch.dict(os.environ, {
-            'SENDER_EMAIL': 'test@example.com',
-            'EMAIL_PASSWORD': 'test_password',
-            'RECIPIENT_EMAIL': 'recipient@example.com',
-            'RECIPIENT_EMAIL2': 'recipient2@example.com'
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                'SENDER_EMAIL': 'test@example.com',
+                'EMAIL_PASSWORD': 'test_password',
+                'RECIPIENT_EMAIL': 'recipient@example.com',
+                'RECIPIENT_EMAIL2': 'recipient2@example.com',
+            },
+            clear=True,
+        ):
             sender_email, sender_password, recipient_emails = main_improved.get_email_credentials()
-            
+
             self.assertEqual(sender_email, 'test@example.com')
             self.assertEqual(sender_password, 'test_password')
             self.assertEqual(recipient_emails, ['recipient@example.com', 'recipient2@example.com'])
-    
+
     def test_get_email_credentials_missing_recipient2(self):
         """Test email credentials with missing RECIPIENT_EMAIL2."""
-        with patch.dict(os.environ, {
-            'SENDER_EMAIL': 'test@example.com',
-            'EMAIL_PASSWORD': 'test_password',
-            'RECIPIENT_EMAIL': 'recipient@example.com'
-        }, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                'SENDER_EMAIL': 'test@example.com',
+                'EMAIL_PASSWORD': 'test_password',
+                'RECIPIENT_EMAIL': 'recipient@example.com',
+            },
+            clear=True,
+        ):
             sender_email, sender_password, recipient_emails = main_improved.get_email_credentials()
-            
+
             self.assertEqual(sender_email, 'test@example.com')
             self.assertEqual(sender_password, 'test_password')
             self.assertEqual(recipient_emails, ['recipient@example.com'])
-    
+
     def test_get_email_credentials_missing_required(self):
         """Test email credentials with missing required fields."""
         with patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(ValueError):
                 main_improved.get_email_credentials()
-    
+
     def test_parse_og_and_price_markup(self):
         """A simple storefront page: og tags plus a price element."""
         html = """
@@ -133,8 +142,7 @@ RECIPIENT_EMAIL2=recipient2@example.com"""
         self.assertFalse(scraper._looks_blocked("<html><title>Product</title></html>", 200))
 
     def test_name_from_blocked_url(self):
-        url = ("https://shop.lululemon.com/p/mens-jackets-and-outerwear/"
-               "Down-For-It-All-Hoodie/_/prod9200786?color=0001")
+        url = "https://shop.lululemon.com/p/mens-jackets-and-outerwear/" "Down-For-It-All-Hoodie/_/prod9200786?color=0001"
         self.assertEqual(scraper._name_from_url(url), "Down For It All Hoodie")
 
     def test_config_structure(self):
@@ -146,7 +154,7 @@ RECIPIENT_EMAIL2=recipient2@example.com"""
         self.assertIn('schedule_time', config.EMAIL_SETTINGS)
         self.assertIn('timeout', config.SCRAPING_SETTINGS)
         self.assertIn('user_agent', config.SCRAPING_SETTINGS)
-    
+
     def test_config_values(self):
         """Test that config values are reasonable."""
         self.assertEqual(config.EMAIL_SETTINGS['smtp_server'], 'smtp.gmail.com')
@@ -155,6 +163,11 @@ RECIPIENT_EMAIL2=recipient2@example.com"""
         self.assertIsInstance(config.SCRAPING_SETTINGS['user_agent'], str)
         self.assertGreater(len(config.SCRAPING_SETTINGS['user_agent']), 0)
 
+
+RUN_NETWORK_TESTS = os.environ.get("RUN_NETWORK_TESTS", "").lower() in {"1", "true", "yes"}
+
+
+@unittest.skipUnless(RUN_NETWORK_TESTS, "network tests: set RUN_NETWORK_TESTS=1 to run")
 class TestIntegration(unittest.TestCase):
     """Integration tests that require actual network requests."""
 
@@ -173,8 +186,7 @@ class TestIntegration(unittest.TestCase):
     def test_lululemon_live_scraping(self):
         """Lululemon may block datacenter IPs, but should fail gracefully."""
         result = scraper.scrape(
-            "https://shop.lululemon.com/p/mens-jackets-and-outerwear/"
-            "Down-For-It-All-Hoodie/_/prod9200786?color=0001",
+            "https://shop.lululemon.com/p/mens-jackets-and-outerwear/" "Down-For-It-All-Hoodie/_/prod9200786?color=0001",
             force=True,
         )
         self.assertTrue(result["name"])

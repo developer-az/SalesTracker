@@ -17,7 +17,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Tuple
-from urllib.parse import urlparse, unquote
+from urllib.parse import unquote, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -30,8 +30,7 @@ except Exception:  # pragma: no cover - curl_cffi is optional
     cffi_requests = None
 
 USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
 REQUEST_HEADERS = {
@@ -45,8 +44,8 @@ REQUEST_HEADERS = {
     "Sec-Fetch-User": "?1",
 }
 
-CACHE_TTL = 15 * 60          # a good price for 15 minutes
-FAILURE_CACHE_TTL = 2 * 60   # retry blocked pages sooner
+CACHE_TTL = 15 * 60  # a good price for 15 minutes
+FAILURE_CACHE_TTL = 2 * 60  # retry blocked pages sooner
 DEFAULT_TIMEOUT = 20
 
 _CURRENCY_SYMBOLS = {"USD": "$", "GBP": "£", "EUR": "€", "CAD": "C$", "AUD": "A$", "JPY": "¥"}
@@ -62,6 +61,7 @@ class BlockedError(Exception):
 # ---------------------------------------------------------------------------
 # Fetching
 # ---------------------------------------------------------------------------
+
 
 def _looks_blocked(html: str, status_code: int) -> bool:
     if status_code in (401, 403, 429):
@@ -117,6 +117,7 @@ def _fetch(url: str, timeout: int = DEFAULT_TIMEOUT) -> str:
 # ---------------------------------------------------------------------------
 # Parsing helpers
 # ---------------------------------------------------------------------------
+
 
 def _walk_json(value: Any) -> Iterable[Dict[str, Any]]:
     """Yield every dictionary inside a JSON-LD blob, depth first."""
@@ -356,13 +357,16 @@ def format_price(price: Optional[float], currency: Optional[str]) -> Optional[st
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def parse_product(html: str, url: str) -> Dict[str, Any]:
     soup = BeautifulSoup(html, "html.parser")
 
     data = _jsonld_product(soup)
 
-    name = _clean_name(data.get("name")) or _clean_name(_meta(soup, prop="og:title")) or _clean_name(
-        soup.title.get_text(strip=True) if soup.title else None
+    name = (
+        _clean_name(data.get("name"))
+        or _clean_name(_meta(soup, prop="og:title"))
+        or _clean_name(soup.title.get_text(strip=True) if soup.title else None)
     )
 
     price = data.get("price")

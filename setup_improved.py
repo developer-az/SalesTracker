@@ -5,7 +5,7 @@ Usage:
     python setup_improved.py py2app
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 APP = ['main_improved.py']
 DATA_FILES = [
@@ -23,8 +23,8 @@ OPTIONS = {
         'CFBundleIdentifier': 'com.saletracker.app',
         'CFBundleVersion': '2.0.0',
         'CFBundleShortVersionString': '2.0.0',
-        'NSHumanReadableCopyright': 'Copyright © 2024 Sale Tracker'
-    }
+        'NSHumanReadableCopyright': 'Copyright © 2024 Sale Tracker',
+    },
 }
 
 setup(

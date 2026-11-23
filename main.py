@@ -1,14 +1,15 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import os
-from dotenv import load_dotenv
-import schedule
-import time
-import requests
-from bs4 import BeautifulSoup
 import json
+import os
+import smtplib
 import sys
+import time
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+import requests
+import schedule
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 
 load_dotenv()  # Load EMAIL credentials from .env file
 
@@ -26,18 +27,19 @@ links["nike"] = [nike_link]
 
 
 def scrape_lululemon(product_link):
-    
+
     response = requests.get(product_link)
     soup = BeautifulSoup(response.content, 'html.parser')
-    
+
     name_element = soup.find("meta", attrs={'property': 'og:title'})
-    price_element = soup.find('span', class_='price') 
+    price_element = soup.find('span', class_='price')
     image = soup.find('meta', property='og:image')['content'] if soup.find('meta', property='og:image') else ''
 
     name = name_element.get("content") if name_element else "Product name not found"
     price = price_element.get_text(strip=True) if price_element else "Price not found"
 
     return name, price, image
+
 
 def scrape_nike(product_link):
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -55,6 +57,7 @@ def scrape_nike(product_link):
     price = "$" + str(data.get("offers", {}).get("lowPrice")) + "USD" if data and "offers" in data else "Price not found"
 
     return name, price, image
+
 
 def send_combined_email():
     all_products_info = []
@@ -74,14 +77,11 @@ def send_combined_email():
     message['From'] = sender_email
     message['To'] = ", ".join(recipient_emails)
 
-    subject_prices = f"{prices_for_subject[0]}/228, {prices_for_subject[1]}/168, {prices_for_subject[2]}/110" 
+    subject_prices = f"{prices_for_subject[0]}/228, {prices_for_subject[1]}/168, {prices_for_subject[2]}/110"
     message['Subject'] = f"{subject_prices} – Your Tracked Products"
 
     # Build email body
-    html_lines = [
-    "<html><body>",
-    "<h2>Here are your tracked products:</h2>"
-    ]
+    html_lines = ["<html><body>", "<h2>Here are your tracked products:</h2>"]
 
     for name, price, image, link in all_products_info:
         # Try to get product image from link preview (via Open Graph)
@@ -109,7 +109,6 @@ def send_combined_email():
     html_body = "\n".join(html_lines)
     message.attach(MIMEText(html_body, 'html'))
 
-
     # Send email
     try:
         server = smtplib.SMTP("smtp.gmail.com", 587)
@@ -122,6 +121,7 @@ def send_combined_email():
     except Exception as e:
         print("Failed to send combined email:", e)
 
+
 def resource_path(relative_path):
     if getattr(sys, 'frozen', False):  # Bundled with py2app
         base_path = os.path.dirname(sys.executable)
@@ -129,12 +129,14 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+
 def run_scheduler():
     schedule.every().day.at("21:00").do(send_combined_email)  # or use .at("21:00")
     # send_combined_email()  # Send immediately for testing
     while True:
         schedule.run_pending()
         time.sleep(1)
+
 
 # Run
 if __name__ == '__main__':

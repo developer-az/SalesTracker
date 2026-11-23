@@ -1,49 +1,49 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import os
-from dotenv import load_dotenv
-import schedule
-import time
-import requests
-from bs4 import BeautifulSoup
 import json
-import sys
 import logging
+import os
+import smtplib
+import sys
+import time
 from datetime import datetime
-from typing import Any, Dict, List, Tuple, Optional
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
+import schedule
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+
 import config
 import recipients_store
-import subscriptions_store
 import scraper
+import subscriptions_store
 
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('sale_tracker.log'),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.FileHandler('sale_tracker.log'), logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
 
+
 def get_email_credentials() -> Tuple[str, str, List[str]]:
     """Get email credentials from environment variables with fallbacks."""
     sender_email = os.getenv("SENDER_EMAIL")
     sender_password = os.getenv("EMAIL_PASSWORD")
-    
+
     # Determine recipients from recipients_store first; fall back to env vars
     dynamic_recipients = recipients_store.load_recipients()
     recipient_email = os.getenv("RECIPIENT_EMAIL")
     recipient_email2 = os.getenv("RECIPIENT_EMAIL2")
-    
+
     if not sender_email or not sender_password:
         raise ValueError("SENDER_EMAIL and EMAIL_PASSWORD must be set in .env file")
-    
+
     # Build recipient list with precedence: dynamic store > env vars
     recipient_emails: List[str] = []
     if dynamic_recipients:
@@ -54,8 +54,9 @@ def get_email_credentials() -> Tuple[str, str, List[str]]:
         recipient_emails = [recipient_email]
         if recipient_email2:
             recipient_emails.append(recipient_email2)
-    
+
     return sender_email, sender_password, recipient_emails
+
 
 def _scrape(product_link: str) -> Tuple[str, str, str]:
     """Scrape any supported product URL and return (name, price, image)."""
@@ -125,12 +126,14 @@ def _build_email(sender_email: str, recipients: List[str], products: List[Dict[s
         </div>
         """)
 
-    html_body = "\n".join([
-        "<html><body>",
-        f"<h2>Your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>",
-        *cards,
-        "</body></html>",
-    ])
+    html_body = "\n".join(
+        [
+            "<html><body>",
+            f"<h2>Your tracked products for {datetime.now().strftime('%B %d, %Y')}:</h2>",
+            *cards,
+            "</body></html>",
+        ]
+    )
     message.attach(MIMEText(html_body, "html"))
     return message
 
@@ -149,11 +152,7 @@ def send_combined_email() -> None:
     """Send one email with every product from config.py."""
     try:
         sender_email, sender_password, recipient_emails = get_email_credentials()
-        entries = [
-            {"company": company, "url": link}
-            for company, links in config.PRODUCT_LINKS.items()
-            for link in links
-        ]
+        entries = [{"company": company, "url": link} for company, links in config.PRODUCT_LINKS.items() for link in links]
         products = _collect_products(entries)
         if not products:
             logger.error("No products were scraped")
@@ -176,9 +175,7 @@ def send_personalized_emails() -> None:
             if not entries:
                 logger.info(f"No personalized products for {recipient}, using global config list")
                 entries = [
-                    {"company": company, "url": link}
-                    for company, links in config.PRODUCT_LINKS.items()
-                    for link in links
+                    {"company": company, "url": link} for company, links in config.PRODUCT_LINKS.items() for link in links
                 ]
 
             products = _collect_products(entries)
@@ -201,17 +198,18 @@ def resource_path(relative_path: str) -> str:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+
 def run_scheduler() -> None:
     """Run the scheduler to send emails at the specified time."""
     logger.info("Starting Sale Tracker scheduler")
     logger.info(f"Emails will be sent daily at {config.EMAIL_SETTINGS['schedule_time']}")
-    
+
     # Use personalized emails when available
     schedule.every().day.at(config.EMAIL_SETTINGS["schedule_time"]).do(send_personalized_emails)
-    
+
     # Send immediately for testing (uncomment the next line to test)
     # send_combined_email()
-    
+
     while True:
         try:
             schedule.run_pending()
@@ -222,6 +220,7 @@ def run_scheduler() -> None:
         except Exception as e:
             logger.error(f"Scheduler error: {e}")
             time.sleep(60)  # Wait before retrying
+
 
 if __name__ == '__main__':
     try:
