@@ -231,10 +231,16 @@ def create_enhanced_email_content(products: List[Dict[str, Any]], recipient: str
     if successful_products:
         html_content += '<div class="product-grid">'
         for product in successful_products:
+            image_html = ''
+            if product.get('image'):
+                image_html = (
+                    f'<img src="{product["image"]}" alt="Product Image" '
+                    'class="product-image" onerror="this.style.display=&quot;none&quot;">'
+                )
             html_content += f'''
             <div class="product-card">
                 <div class="product-retailer">{product['retailer'].title()}</div>
-                {f'<img src="{product["image"]}" alt="Product Image" class="product-image" onerror="this.style.display=\'none\'">' if product.get('image') else ''}
+                {image_html}
                 <div class="product-name">{product['name']}</div>
                 <div class="product-price">{product['price']}</div>
                 <p><a href="{product['url']}" target="_blank" style="color: #3498db;">View Product →</a></p>
